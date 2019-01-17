@@ -15,7 +15,7 @@ import webauthnkit.core.authenticator.internal.InternalAuthenticatorSetting
 import webauthnkit.core.authenticator.internal.KeySupportChooser
 import webauthnkit.core.authenticator.internal.PublicKeyCredentialSource
 import webauthnkit.core.authenticator.internal.ui.UserConsentUI
-import webauthnkit.core.util.AuthndroidLogger
+import webauthnkit.core.util.WKLogger
 import webauthnkit.core.util.ByteArrayUtil
 import java.util.*
 
@@ -54,7 +54,7 @@ class InternalMakeCredentialSession(
         credTypesAndPubKeyAlgs:          List<PublicKeyCredentialParameters>,
         excludeCredentialDescriptorList: List<PublicKeyCredentialDescriptor>
     ) {
-        AuthndroidLogger.d(TAG, "makeCredential")
+        WKLogger.d(TAG, "makeCredential")
 
         GlobalScope.launch {
 
@@ -62,7 +62,7 @@ class InternalMakeCredentialSession(
 
             val keySupport = keySupportChooser.choose(requestedAlgorithms)
             if (keySupport == null) {
-                AuthndroidLogger.d(TAG, "supported alg not found, stop session")
+                WKLogger.d(TAG, "supported alg not found, stop session")
                 stop(ErrorReason.Unsupported)
                 return@launch
             }
@@ -168,23 +168,23 @@ class InternalMakeCredentialSession(
     }
 
     override fun canPerformUserVerification(): Boolean {
-        AuthndroidLogger.d(TAG, "canPerformUserVerification")
+        WKLogger.d(TAG, "canPerformUserVerification")
         return true
     }
 
     override fun canStoreResidentKey(): Boolean {
-        AuthndroidLogger.d(TAG, "canStoreResidentKey")
+        WKLogger.d(TAG, "canStoreResidentKey")
         return true
     }
 
     override fun start() {
-        AuthndroidLogger.d(TAG, "start")
+        WKLogger.d(TAG, "start")
         if (stopped) {
-            AuthndroidLogger.d(TAG, "already stopped")
+            WKLogger.d(TAG, "already stopped")
             return
         }
         if (started) {
-            AuthndroidLogger.d(TAG, "already started")
+            WKLogger.d(TAG, "already started")
             return
         }
         started = true
@@ -192,9 +192,9 @@ class InternalMakeCredentialSession(
     }
 
     override fun cancel(reason: ErrorReason) {
-        AuthndroidLogger.d(TAG, "cancel")
+        WKLogger.d(TAG, "cancel")
         if (stopped) {
-            AuthndroidLogger.d(TAG, "already stopped")
+            WKLogger.d(TAG, "already stopped")
             return
         }
         /* TODO cancel UI
@@ -207,13 +207,13 @@ class InternalMakeCredentialSession(
     }
 
     private fun stop(reason: ErrorReason) {
-        AuthndroidLogger.d(TAG, "stop")
+        WKLogger.d(TAG, "stop")
         if (!started) {
-            AuthndroidLogger.d(TAG, "not started")
+            WKLogger.d(TAG, "not started")
             return
         }
         if (stopped) {
-            AuthndroidLogger.d(TAG, "already stopped")
+            WKLogger.d(TAG, "already stopped")
             return
         }
         stopped = true
@@ -221,7 +221,7 @@ class InternalMakeCredentialSession(
     }
 
     private fun onComplete() {
-        AuthndroidLogger.d(TAG, "onComplete")
+        WKLogger.d(TAG, "onComplete")
         stopped = true
     }
 

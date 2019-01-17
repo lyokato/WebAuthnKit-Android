@@ -5,7 +5,7 @@ import kotlinx.serialization.ImplicitReflectionSerializer
 
 import webauthnkit.core.AuthenticatorAttachment
 import webauthnkit.core.AuthenticatorTransport
-import webauthnkit.core.util.AuthndroidLogger
+import webauthnkit.core.util.WKLogger
 import webauthnkit.core.authenticator.Authenticator
 import webauthnkit.core.authenticator.GetAssertionSession
 import webauthnkit.core.authenticator.MakeCredentialSession
@@ -52,7 +52,7 @@ class InternalAuthenticator(
         set(value) { setting.allowUserVerification = value }
 
     override fun newGetAssertionSession(): GetAssertionSession {
-        AuthndroidLogger.d(TAG, "newGetAssertionSession")
+        WKLogger.d(TAG, "newGetAssertionSession")
         return InternalGetAssertionSession(
             setting           = setting,
             ui                = ui,
@@ -62,7 +62,7 @@ class InternalAuthenticator(
     }
 
     override fun newMakeCredentialSession(): MakeCredentialSession {
-        AuthndroidLogger.d(TAG, "newMakeCredentialSession")
+        WKLogger.d(TAG, "newMakeCredentialSession")
         return InternalMakeCredentialSession(
             setting           = setting,
             ui                = ui,

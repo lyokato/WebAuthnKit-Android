@@ -12,7 +12,7 @@ import webauthnkit.core.PublicKeyCredentialRequestOptions
 import webauthnkit.core.authenticator.Authenticator
 import webauthnkit.core.client.operation.CreateOperation
 import webauthnkit.core.client.operation.GetOperation
-import webauthnkit.core.util.AuthndroidLogger
+import webauthnkit.core.util.WKLogger
 import webauthnkit.core.util.ByteArrayUtil
 
 @ExperimentalCoroutinesApi
@@ -32,7 +32,7 @@ class WebAuthnClient(
     var maxTimeout:     Long = 120
 
     fun get(options: PublicKeyCredentialRequestOptions): GetOperation {
-        AuthndroidLogger.d(TAG, "get")
+        WKLogger.d(TAG, "get")
 
         val timer = adjustLifetimeTimer(options.timeout)
         val rpId  = pickRelyingPartyID(options.rpId)
@@ -57,7 +57,7 @@ class WebAuthnClient(
     }
 
     fun create(options: PublicKeyCredentialCreationOptions): CreateOperation {
-        AuthndroidLogger.d(TAG, "create")
+        WKLogger.d(TAG, "create")
 
         val timer = adjustLifetimeTimer(options.timeout)
         val rpId  = pickRelyingPartyID(options.rp.id)
@@ -82,7 +82,7 @@ class WebAuthnClient(
     }
 
     private fun adjustLifetimeTimer(timeout: Long?): Long {
-        AuthndroidLogger.d(TAG, "adjustLifetimeTimer")
+        WKLogger.d(TAG, "adjustLifetimeTimer")
         return timeout?.let { t ->
             return when {
                 t < minTimeout -> minTimeout
@@ -93,7 +93,7 @@ class WebAuthnClient(
     }
 
     private fun pickRelyingPartyID(rpId: String?): String {
-        AuthndroidLogger.d(TAG, "pickRelyingPartyID")
+        WKLogger.d(TAG, "pickRelyingPartyID")
         return rpId?.let { it } ?: origin
     }
 
@@ -102,7 +102,7 @@ class WebAuthnClient(
         challenge: String
     ): Triple<CollectedClientData, String, UByteArray> {
 
-        AuthndroidLogger.d(TAG, "generateClientData")
+        WKLogger.d(TAG, "generateClientData")
 
         val data = CollectedClientData(
             type      = type,

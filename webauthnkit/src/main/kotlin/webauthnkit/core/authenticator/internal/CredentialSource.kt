@@ -3,7 +3,7 @@ package webauthnkit.core.authenticator.internal
 import android.util.Base64
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.dataformat.cbor.CBORFactory
-import webauthnkit.core.util.AuthndroidLogger
+import webauthnkit.core.util.WKLogger
 import webauthnkit.core.util.ByteArrayUtil
 
 @ExperimentalUnsignedTypes
@@ -21,24 +21,24 @@ class PublicKeyCredentialSource(
         val TAG = this::class.simpleName
 
         fun fromBase64(str: String): PublicKeyCredentialSource? {
-            AuthndroidLogger.d(TAG, "fromBase64")
+            WKLogger.d(TAG, "fromBase64")
             return try {
                 val bytes = Base64.decode(str, Base64.URL_SAFE)
                 // TODO decryption
                 fromCBOR(bytes)
             } catch (e: Exception) {
-                AuthndroidLogger.w(TAG, "failed to decode Base64: " + e.localizedMessage)
+                WKLogger.w(TAG, "failed to decode Base64: " + e.localizedMessage)
                 null
             }
         }
 
         fun fromCBOR(bytes: ByteArray): PublicKeyCredentialSource? {
-            AuthndroidLogger.d(TAG, "fromCBOR")
+            WKLogger.d(TAG, "fromCBOR")
             return try {
                 ObjectMapper(CBORFactory()).readValue(bytes,
                     PublicKeyCredentialSource::class.java)
             } catch (e: Exception) {
-                AuthndroidLogger.w(TAG, "failed to decode CBOR: " + e.localizedMessage)
+                WKLogger.w(TAG, "failed to decode CBOR: " + e.localizedMessage)
                 null
             }
         }
@@ -61,7 +61,7 @@ class PublicKeyCredentialSource(
                 null
             }
         } catch(e: Exception) {
-            AuthndroidLogger.w(TAG, "failed to encode Base64: " + e.localizedMessage)
+            WKLogger.w(TAG, "failed to encode Base64: " + e.localizedMessage)
             null
         }
     }
@@ -79,7 +79,7 @@ class PublicKeyCredentialSource(
                 .writeValueAsBytes(map)
                 .toUByteArray()
         } catch (e: Exception) {
-            AuthndroidLogger.w(TAG, "failed to encode CBOR: " + e.localizedMessage)
+            WKLogger.w(TAG, "failed to encode CBOR: " + e.localizedMessage)
             null
         }
 
