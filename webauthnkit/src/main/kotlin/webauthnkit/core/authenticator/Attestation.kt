@@ -1,0 +1,72 @@
+package webauthnkit.core.authenticator
+
+import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.dataformat.cbor.CBORFactory
+import webauthnkit.core.util.AuthndroidLogger
+
+@ExperimentalUnsignedTypes
+class AttestationObject(
+    val fmt:      String,
+    val authData: AuthenticatorData,
+    val attStmt:  Map<String, Any>
+) {
+
+    companion object {
+        val TAG = this::class.simpleName
+    }
+
+    fun toNone(): AttestationObject {
+        return AttestationObject(
+            fmt      = "none",
+            authData = this.authData,
+            attStmt  = HashMap()
+        )
+    }
+
+    fun isSelfAttestation(): Boolean {
+        AuthndroidLogger.d(TAG, "isSelfAttestation")
+        if (this.fmt != "packed") {
+            return false
+        }
+        if (this.attStmt.containsKey("x5c")) {
+            return false
+        }
+        if (this.attStmt.containsKey("ecdaaKeyId")) {
+            return false
+        }
+        if (this.authData.attestedCredentialData != null) {
+           return false
+        }
+        if (this.authData.attestedCredentialData!!.aaguid.any { it != 0x00.toUByte() }) {
+            return false
+        }
+        return true
+    }
+
+    fun toBytes(): UByteArray? {
+        AuthndroidLogger.d(TAG, "toBytes")
+
+        return try {
+            val authDataBytes = this.authData.toBytes()
+            if (authDataBytes == null) {
+                AuthndroidLogger.d(TAG, "failed to build authenticator data")
+                return null
+            }
+            val map = LinkedHashMap<String, Any>()
+            map["authData"] = authDataBytes.toByteArray()
+            map["fmt"]      = this.fmt
+            map["attStmt"]  = this.attStmt
+
+            ObjectMapper(CBORFactory())
+                .writeValueAsBytes(map)
+                .toUByteArray()
+
+        } catch (e: Exception) {
+            AuthndroidLogger.d(TAG, "failed to build attestation binary: " + e.localizedMessage)
+            null
+
+        }
+
+    }
+
+}

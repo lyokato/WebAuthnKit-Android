@@ -1,0 +1,239 @@
+package webauthnkit.core.authenticator.internal
+
+import android.content.ContentValues
+import android.content.Context
+import android.database.sqlite.SQLiteDatabase
+import android.database.sqlite.SQLiteOpenHelper
+import kotlinx.serialization.ImplicitReflectionSerializer
+import webauthnkit.core.util.AuthndroidLogger
+import webauthnkit.core.util.ByteArrayUtil
+import java.lang.Exception
+
+@ImplicitReflectionSerializer
+@ExperimentalUnsignedTypes
+class CredentialStore(context: Context) {
+
+    companion object {
+        val TAG = this::class.simpleName
+        private const val DatabaseName = "authndroid.db"
+        private const val DatabaseVersion = 1
+    }
+
+    private val db = CredentialStoreDatabaseHelper(
+        context = context,
+        name    = DatabaseName,
+        version = DatabaseVersion
+    )
+
+    fun loadAllCredentialSources(rpId: String): List<PublicKeyCredentialSource> {
+        AuthndroidLogger.d(TAG, "loadAllCredentialSource")
+        return db.searchByRpId(rpId)
+    }
+
+    fun loadAllCredentialSources(rpId: String, userHandle: ByteArray): List<PublicKeyCredentialSource> {
+        AuthndroidLogger.d(TAG, "loadAllCredentialSource")
+        return loadAllCredentialSources(rpId).filter {
+            ByteArrayUtil.equals(it.userHandle, userHandle)
+        }
+    }
+
+    fun deleteAllCredentialSources(rpId: String) {
+        AuthndroidLogger.d(TAG, "deleteAllCredentialSource")
+        db.deleteByRpId(rpId)
+    }
+
+    fun deleteAllCredentialSources(rpId: String, userHandle: ByteArray) {
+        AuthndroidLogger.d(TAG, "deleteAllCredentialSource")
+        loadAllCredentialSources(rpId, userHandle).forEach {
+            val key = ByteArrayUtil.toHex(it.id)
+            db.delete(key)
+        }
+    }
+
+    fun lookupCredentialSource(credentialId: ByteArray): PublicKeyCredentialSource? {
+        AuthndroidLogger.d(TAG, "lookupCredentialSource")
+        val key = ByteArrayUtil.toHex(credentialId)
+        return db.findById(key)
+    }
+
+    fun saveCredentialSource(source: PublicKeyCredentialSource): Boolean {
+        AuthndroidLogger.d(TAG, "saveCredentialSource")
+
+        val content = source.toBase64()
+        return if (content != null) {
+            db.save(
+                id      = source.idHex,
+                rpId    = source.rpId,
+                content = content
+            )
+        } else {
+            AuthndroidLogger.d(TAG, "failed to encode content")
+            false
+        }
+    }
+}
+
+@ExperimentalUnsignedTypes
+class CredentialStoreDatabaseHelper(
+    context: Context,
+    name:    String,
+    version: Int
+): SQLiteOpenHelper(context, name, null, version) {
+
+    companion object {
+        private val TAG = this::class.simpleName
+        private const val TableName = "credentials"
+        private const val ColumnId       = "id"
+        private const val ColumnRpId     = "rp_id"
+        private const val ColumnContent  = "content"
+        private const val ColumnOnUpdate = "on_update"
+    }
+
+    override fun onCreate(db: SQLiteDatabase) {
+        val tableSQL = """
+            CREATE TABLE $TableName(
+                $ColumnId       TEXT PRIMARY KEY,
+                $ColumnRpId     TEXT NOT NULL,
+                $ColumnContent  TEXT NOT NULL,
+                $ColumnOnUpdate TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL
+            );
+        """.trimMargin()
+
+        val indexSQL = """
+            CREATE INDEX credentials_index
+            ON credentials ($ColumnRpId);
+        """.trimIndent()
+
+        db.execSQL(tableSQL)
+        db.execSQL(indexSQL)
+    }
+
+
+    override fun onUpgrade(db: SQLiteDatabase, oldVer: Int, currentVer: Int) {
+        AuthndroidLogger.w(TAG, "onUpgrade")
+    }
+
+    fun findById(id: String): PublicKeyCredentialSource? {
+        AuthndroidLogger.w(TAG, "findById")
+        val db = readableDatabase
+        val cursor = db.query(TableName,
+            arrayOf(ColumnId, ColumnRpId, ColumnContent),
+            "$ColumnId = ?",
+            arrayOf(id),
+            null,
+            null,
+            "$ColumnOnUpdate DESC"
+        )
+        cursor.use {
+            return if (it.moveToNext()) {
+                val content = it.getString(it.getColumnIndex(ColumnContent))
+                PublicKeyCredentialSource.fromBase64(content)
+            } else {
+                AuthndroidLogger.w(TAG, "not found")
+                null
+            }
+        }
+    }
+
+    fun delete(id: String):Boolean {
+        AuthndroidLogger.d(TAG, "delete")
+        val db = writableDatabase
+        db.beginTransaction()
+        return try {
+            db.delete(TableName, "$ColumnId = ?", arrayOf(id))
+            true
+        } catch (e: Exception) {
+            AuthndroidLogger.w(TAG, "failed to delete: " + e.localizedMessage)
+            false
+        } finally {
+            db.endTransaction()
+        }
+    }
+
+    fun deleteByRpId(rpId: String): Boolean {
+        AuthndroidLogger.d(TAG, "deleteByRpId")
+        val db = writableDatabase
+        db.beginTransaction()
+
+        return try {
+            db.delete(TableName, "$ColumnRpId = ?", arrayOf(rpId))
+            true
+        } catch (e: Exception) {
+            AuthndroidLogger.w(TAG, "failed to delete: " + e.localizedMessage)
+            false
+        } finally {
+            db.endTransaction()
+        }
+    }
+
+    fun deleteAll(): Boolean {
+        AuthndroidLogger.d(TAG, "deleteAll")
+        val db = writableDatabase
+        db.beginTransaction()
+
+        return try {
+            db.delete(TableName, null, null)
+            true
+        } catch (e: Exception) {
+            AuthndroidLogger.w(TAG, "failed to delete: " + e.localizedMessage)
+            false
+        } finally {
+            db.endTransaction()
+        }
+    }
+
+    fun searchByRpId(rpId: String): List<PublicKeyCredentialSource> {
+        AuthndroidLogger.d(TAG, "searchByRpId")
+
+        val db = readableDatabase
+
+        val cursor = db.query(TableName,
+            arrayOf(ColumnId, ColumnRpId, ColumnContent),
+            "$ColumnRpId = ?",
+            arrayOf(rpId),
+            null,
+            null,
+            "$ColumnOnUpdate DESC"
+        )
+
+        cursor.use {
+
+            val results: MutableList<PublicKeyCredentialSource> = mutableListOf()
+
+            while (it.moveToNext()) {
+                val content = it.getString(it.getColumnIndex(ColumnContent))
+                val source = PublicKeyCredentialSource.fromBase64(content)
+                if (source != null) {
+                    results.add(source)
+                } else {
+                    AuthndroidLogger.w(TAG, "invalid format of credential-source")
+                    // XXX should delete this record?
+                }
+            }
+
+            return results
+        }
+    }
+
+    fun save(id: String, rpId: String, content: String): Boolean {
+        AuthndroidLogger.d(TAG, "save")
+
+        val db = writableDatabase
+        db.beginTransaction()
+
+        return try {
+            val values = ContentValues()
+            values.put(ColumnId, id)
+            values.put(ColumnRpId, rpId)
+            values.put(ColumnContent, content)
+            db.insertOrThrow(TableName, null, values)
+            true
+        } catch (e: Exception) {
+            AuthndroidLogger.w(TAG, "failed to insert: " + e.localizedMessage)
+            false
+        } finally {
+            db.endTransaction()
+        }
+    }
+}
+

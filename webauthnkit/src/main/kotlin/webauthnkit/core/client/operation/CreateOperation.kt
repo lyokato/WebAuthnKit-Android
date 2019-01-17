@@ -1,0 +1,289 @@
+package webauthnkit.core.client.operation
+
+import java.util.*
+
+import kotlin.coroutines.Continuation
+import kotlin.coroutines.resume
+import kotlin.coroutines.resumeWithException
+import kotlin.coroutines.suspendCoroutine
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.launch
+
+import webauthnkit.core.*
+import webauthnkit.core.CollectedClientData
+import webauthnkit.core.PublicKeyCredentialCreationOptions
+import webauthnkit.core.authenticator.AttestationObject
+import webauthnkit.core.authenticator.MakeCredentialSession
+import webauthnkit.core.authenticator.MakeCredentialSessionListener
+import webauthnkit.core.util.AuthndroidLogger
+import webauthnkit.core.util.ByteArrayUtil
+
+@ExperimentalCoroutinesApi
+@ExperimentalUnsignedTypes
+class CreateOperation(
+    private val options: PublicKeyCredentialCreationOptions,
+    private val rpId:           String,
+    private val session:        MakeCredentialSession,
+    private val clientData:     CollectedClientData,
+    private val clientDataJSON: String,
+    private val clientDataHash: UByteArray,
+    private val lifetimeTimer:  Long
+) {
+
+    companion object {
+        val TAG = this::class.simpleName
+    }
+
+    private var stopped: Boolean = false
+
+    private val sessionListener = object : MakeCredentialSessionListener {
+
+        override fun onAvailable(session: MakeCredentialSession) {
+            AuthndroidLogger.d(TAG, "onAvailable")
+
+            if (stopped) {
+                AuthndroidLogger.d(TAG, "already stopped")
+                return
+            }
+
+            if (options.authenticatorSelection != null) {
+
+                val selection = options.authenticatorSelection!!
+
+                if (selection.authenticatorAttachment != null) {
+                    if (selection.authenticatorAttachment != session.attachment) {
+                        AuthndroidLogger.d(TAG, "attachment doesn't match to RP's request")
+                        stop(ErrorReason.Unsupported)
+                        return
+                    }
+                }
+
+                if (selection.requireResidentKey && !session.canStoreResidentKey()) {
+                    AuthndroidLogger.d(TAG, "This authenticator can't store resident-key")
+                    stop(ErrorReason.Unsupported)
+                    return
+                }
+
+                if (selection.userVerification == UserVerificationRequirement.Required
+                    && !session.canPerformUserVerification()) {
+                    AuthndroidLogger.d(TAG, "This authenticator can't perform user verification")
+                    stop(ErrorReason.Unsupported)
+                    return
+                }
+            }
+
+            val userVerification = judgeUserVerificationExecution(session)
+
+            val userPresence = !userVerification
+
+            val excludeCredentialDescriptorList =
+                    options.excludeCredentials.filter {
+                       it.transports.contains(session.transport)
+                    }
+
+            val requireResidentKey = options.authenticatorSelection?.requireResidentKey ?: false
+
+            val rpEntity = PublicKeyCredentialRpEntity(
+                id = rpId,
+                name = options.rp.name,
+                icon = options.rp.icon
+            )
+
+            session.makeCredential(
+                hash                            = clientDataHash,
+                rpEntity                        = rpEntity,
+                userEntity                      = options.user,
+                requireResidentKey              = requireResidentKey,
+                requireUserPresence             = userPresence,
+                requireUserVerification         = userVerification,
+                credTypesAndPubKeyAlgs          = options.pubKeyCredParams,
+                excludeCredentialDescriptorList = excludeCredentialDescriptorList
+            )
+        }
+
+        override fun onCredentialCreated(session: MakeCredentialSession, attestationObject: AttestationObject) {
+            AuthndroidLogger.d(TAG, "onCredentialCreated")
+
+            val attestedCred = attestationObject.authData.attestedCredentialData
+            if (attestedCred == null) {
+                AuthndroidLogger.w(TAG, "attested credential data not found")
+                dispatchError(ErrorReason.Unknown)
+                return
+            }
+
+            val credId = attestedCred.credentialId
+
+            val resultedAttestationObject: UByteArray?
+
+            if (options.attestation == AttestationConveyancePreference.None
+                && attestationObject.isSelfAttestation()) {
+                // if it's self attestation,
+                // embed 0x00 for aaguid, and empty CBOR map for AttStmt
+
+                val bytes = attestationObject.toNone().toBytes()
+                if (bytes == null) {
+                    AuthndroidLogger.w(TAG, "failed to build attestation object")
+                    dispatchError(ErrorReason.Unknown)
+                    return
+                }
+
+                resultedAttestationObject = bytes
+
+
+                // replace AAGUID to null
+                val guidPos = 37 // ( rpIdHash(32), flag(1), signCount(4) )
+                for (idx in (guidPos..(guidPos+15))) {
+                    resultedAttestationObject[idx] = 0x00.toUByte()
+                }
+
+            } else {
+                // if it's other attestation
+                // encoded to byte array as it is
+                val bytes = attestationObject.toBytes()
+                if (bytes == null) {
+                    AuthndroidLogger.w(TAG, "failed to build attestation object")
+                    dispatchError(ErrorReason.Unknown)
+                    return
+                }
+                resultedAttestationObject = bytes
+            }
+
+            val response = AuthenticatorAttestationResponse(
+                clientDataJSON = clientDataJSON,
+                attestationObject = resultedAttestationObject
+            )
+
+            val cred = PublicKeyCredential(
+                rawId = credId,
+                id = ByteArrayUtil.encodeBase64URL(credId),
+                response = response
+            )
+
+            completed()
+
+            // XXX should be called on UI thread?
+            continuation?.resume(cred)
+            continuation = null
+
+        }
+
+        override fun onOperationStopped(session: MakeCredentialSession, reason: ErrorReason) {
+            AuthndroidLogger.d(TAG, "onOperationStopped")
+            stop(reason)
+        }
+
+        override fun onUnavailable(session: MakeCredentialSession) {
+            AuthndroidLogger.d(TAG, "onUnavailable")
+            stop(ErrorReason.NotAllowed)
+        }
+
+    }
+
+    private var continuation: Continuation<MakeCredentialResponse>? = null
+
+    suspend fun start(): MakeCredentialResponse = suspendCoroutine { cont ->
+
+        AuthndroidLogger.d(TAG, "start")
+
+        GlobalScope.launch {
+
+            if (stopped) {
+                AuthndroidLogger.d(TAG, "already stopped")
+                cont.resumeWithException(BadOperationException())
+                return@launch
+            }
+
+            if (continuation != null) {
+                AuthndroidLogger.d(TAG, "continuation already exists")
+                cont.resumeWithException(BadOperationException())
+                return@launch
+            }
+
+            continuation = cont
+
+            startTimer()
+
+            session.listener = sessionListener
+            session.start()
+        }
+    }
+
+    fun cancel() {
+        AuthndroidLogger.d(TAG, "cancel")
+    }
+
+    private fun stop(reason: ErrorReason) {
+        AuthndroidLogger.d(TAG, "stop")
+        stopInternal(reason)
+        dispatchError(reason)
+    }
+
+    private fun completed() {
+        AuthndroidLogger.d(TAG, "completed")
+        stopTimer()
+    }
+
+    private fun stopInternal(reason: ErrorReason) {
+        AuthndroidLogger.d(TAG, "stopInternal")
+        if (continuation == null) {
+            AuthndroidLogger.d(TAG, "not started")
+           // not started
+            return
+        }
+        if (stopped) {
+            AuthndroidLogger.d(TAG, "already stopped")
+            return
+        }
+        stopTimer()
+        session.cancel(reason)
+        // listener!.onFinish()
+    }
+
+    private fun dispatchError(reason: ErrorReason) {
+        AuthndroidLogger.d(TAG, "dispatchError")
+        GlobalScope.launch(Dispatchers.Unconfined) {
+            continuation?.resumeWithException(reason.rawValue)
+        }
+    }
+
+    private var timer: Timer? = null
+
+    private fun startTimer() {
+        AuthndroidLogger.d(TAG, "startTimer")
+        stopTimer()
+        timer = Timer()
+        timer!!.schedule(object: TimerTask(){
+            override fun run() {
+                timer = null
+                onTimeout()
+            }
+        }, lifetimeTimer*1000)
+    }
+
+    private fun stopTimer() {
+        AuthndroidLogger.d(TAG, "stopTimer")
+        timer?.cancel()
+        timer = null
+    }
+
+    private fun onTimeout() {
+        AuthndroidLogger.d(TAG, "onTimeout")
+        stop(ErrorReason.Timeout)
+    }
+
+    private fun judgeUserVerificationExecution(session: MakeCredentialSession): Boolean {
+        AuthndroidLogger.d(TAG, "judgeUserVerificationExecution")
+
+        val userVerificationRequest =
+            options.authenticatorSelection?.userVerification
+                ?: UserVerificationRequirement.Discouraged
+
+        return when (userVerificationRequest) {
+            UserVerificationRequirement.Required    -> true
+            UserVerificationRequirement.Discouraged -> false
+            UserVerificationRequirement.Preferred   -> session.canPerformUserVerification()
+        }
+    }
+}
