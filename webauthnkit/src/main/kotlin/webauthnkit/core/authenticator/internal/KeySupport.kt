@@ -40,7 +40,7 @@ object AttestationFormatType {
 }
 
 @ExperimentalUnsignedTypes
-class KeySupportChooser(val context: Context) {
+class KeySupportChooser(private val context: Context) {
 
     companion object {
         val TAG = this::class.simpleName
@@ -61,7 +61,7 @@ class KeySupportChooser(val context: Context) {
         for (alg in algorithms) {
             when (alg) {
                 COSEAlgorithmIdentifier.es256 -> {
-                    return ECDSAKeySupport(context, alg)
+                    return ECDSAKeySupport(alg)
                 }
                 else -> {
                     WKLogger.d(TAG, "key support for this algorithm not found")
@@ -103,7 +103,6 @@ interface KeySupport {
 @TargetApi(Build.VERSION_CODES.M)
 @ExperimentalUnsignedTypes
 class ECDSAKeySupport(
-    val context: Context,
     override val alg: Int
 ): KeySupport {
 
@@ -259,7 +258,7 @@ class ECDSAKeySupport(
 
 @ExperimentalUnsignedTypes
 class LegacyRSAKeySupport(
-    val context: Context,
+    private val context: Context,
     override val alg: Int
 ): KeySupport {
 
