@@ -58,7 +58,8 @@ class InternalGetAssertionSession(
 
         GlobalScope.launch {
 
-            val sources = gatherCredentialSources(rpId, allowCredentialDescriptorList)
+            val sources =
+                gatherCredentialSources(rpId, allowCredentialDescriptorList)
 
             if (sources.isEmpty()) {
                 WKLogger.d(TAG, "allowable credential source not found, stop session")
@@ -109,7 +110,9 @@ class InternalGetAssertionSession(
                 stop(ErrorReason.Unknown)
                 return@launch
             }
-            val dataToBeSigned = ByteArrayUtil.merge(authenticatorDataBytes, hash)
+
+            val dataToBeSigned =
+                ByteArrayUtil.merge(authenticatorDataBytes, hash)
 
             val signature = keySupport.sign(cred.keyLabel, dataToBeSigned.toByteArray())
             if (signature == null) {

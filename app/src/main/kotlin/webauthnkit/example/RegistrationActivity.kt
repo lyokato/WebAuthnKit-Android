@@ -168,12 +168,9 @@ class RegistrationActivity : AppCompatActivity() {
                 }
 
                 attestationConveyance.setItems(attestationConveyanceOptions)
-
             }
 
-
             button("Register") {
-
                 onExecute()
             }
         }
@@ -193,12 +190,11 @@ class RegistrationActivity : AppCompatActivity() {
             keySupportChooser = KeySupportChooser(this)
         )
 
-        val client = WebAuthnClient(
+        return WebAuthnClient(
             origin        = "https://example.org/",
             authenticator = authenticator
         )
 
-        return client
     }
 
 }

@@ -151,13 +151,13 @@ class CreateOperation(
             }
 
             val response = AuthenticatorAttestationResponse(
-                clientDataJSON = clientDataJSON,
+                clientDataJSON    = clientDataJSON,
                 attestationObject = resultedAttestationObject
             )
 
             val cred = PublicKeyCredential(
-                rawId = credId,
-                id = ByteArrayUtil.encodeBase64URL(credId),
+                rawId    = credId,
+                id       = ByteArrayUtil.encodeBase64URL(credId),
                 response = response
             )
 

@@ -71,9 +71,10 @@ class GetOperation(
 
             } else {
 
-                val allowDescriptorList = options.allowCredential.filter {
-                    it.transports.contains(session.transport)
-                }
+                val allowDescriptorList =
+                    options.allowCredential.filter {
+                        it.transports.contains(session.transport)
+                    }
 
                 if (allowDescriptorList.isEmpty()) {
                     WKLogger.d(TAG, "no matched credentials exists on this authenticator")
@@ -96,7 +97,8 @@ class GetOperation(
             }
         }
 
-        override fun onCredentialDiscovered(session: GetAssertionSession, assertion: AuthenticatorAssertionResult) {
+        override fun onCredentialDiscovered(session: GetAssertionSession,
+                                            assertion: AuthenticatorAssertionResult) {
             WKLogger.d(TAG, "onCredentialCreated")
 
 

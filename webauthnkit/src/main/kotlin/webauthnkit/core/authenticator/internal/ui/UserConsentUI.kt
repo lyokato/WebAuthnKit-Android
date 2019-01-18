@@ -20,8 +20,8 @@ class UserConsentUI(
     }
 
     suspend fun requestUserConsent(
-        rpEntity: PublicKeyCredentialRpEntity,
-        userEntity: PublicKeyCredentialUserEntity,
+        rpEntity:                PublicKeyCredentialRpEntity,
+        userEntity:              PublicKeyCredentialUserEntity,
         requireUserVerification: Boolean
     ): String = suspendCoroutine { cont ->
 
