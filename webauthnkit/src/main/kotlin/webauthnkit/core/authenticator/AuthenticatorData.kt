@@ -2,7 +2,7 @@ package webauthnkit.core.authenticator
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.dataformat.cbor.CBORFactory
-import webauthnkit.core.util.WKLogger
+import webauthnkit.core.util.WAKLogger
 import webauthnkit.core.util.ByteArrayUtil
 
 object COSEKeyFieldType {
@@ -79,7 +79,7 @@ class COSEKeyEC2(
                 .toUByteArray()
 
         } catch (e:Exception) {
-            WKLogger.w(TAG, "failed to build CBOR")
+            WAKLogger.w(TAG, "failed to build CBOR")
             return null
         }
 
@@ -113,7 +113,7 @@ class COSEKeyRSA(
                 .toUByteArray()
 
         } catch (e:Exception) {
-            WKLogger.w(TAG, "failed to build CBOR")
+            WAKLogger.w(TAG, "failed to build CBOR")
             return null
         }
     }
@@ -134,7 +134,7 @@ class AttestedCredentialData(
     fun toBytes(): UByteArray? {
         val pubKeyBytes = credentialPublicKey.toBytes()
         if (pubKeyBytes == null) {
-            WKLogger.w(TAG, "failed to build COSE key")
+            WAKLogger.w(TAG, "failed to build COSE key")
             return null
         }
         val credentialIdLength: UInt = credentialId.size.toUInt()
@@ -235,7 +235,7 @@ class AuthenticatorData(
         if (attestedCredentialData != null) {
             val attestedCredentialDataBytes = attestedCredentialData.toBytes()
             if (attestedCredentialDataBytes == null) {
-                WKLogger.d(TAG, "failed to build attestedCredentialData")
+                WAKLogger.d(TAG, "failed to build attestedCredentialData")
                 return null
             }
             result = ByteArrayUtil.merge(result, attestedCredentialDataBytes)

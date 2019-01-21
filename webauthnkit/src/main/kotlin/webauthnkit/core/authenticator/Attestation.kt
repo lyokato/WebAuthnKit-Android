@@ -2,7 +2,7 @@ package webauthnkit.core.authenticator
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.dataformat.cbor.CBORFactory
-import webauthnkit.core.util.WKLogger
+import webauthnkit.core.util.WAKLogger
 
 @ExperimentalUnsignedTypes
 class AttestationObject(
@@ -24,7 +24,7 @@ class AttestationObject(
     }
 
     fun isSelfAttestation(): Boolean {
-        WKLogger.d(TAG, "isSelfAttestation")
+        WAKLogger.d(TAG, "isSelfAttestation")
         if (this.fmt != "packed") {
             return false
         }
@@ -44,12 +44,12 @@ class AttestationObject(
     }
 
     fun toBytes(): UByteArray? {
-        WKLogger.d(TAG, "toBytes")
+        WAKLogger.d(TAG, "toBytes")
 
         return try {
             val authDataBytes = this.authData.toBytes()
             if (authDataBytes == null) {
-                WKLogger.d(TAG, "failed to build authenticator data")
+                WAKLogger.d(TAG, "failed to build authenticator data")
                 return null
             }
             val map = LinkedHashMap<String, Any>()
@@ -62,7 +62,7 @@ class AttestationObject(
                 .toUByteArray()
 
         } catch (e: Exception) {
-            WKLogger.d(TAG, "failed to build attestation binary: " + e.localizedMessage)
+            WAKLogger.d(TAG, "failed to build attestation binary: " + e.localizedMessage)
             null
 
         }

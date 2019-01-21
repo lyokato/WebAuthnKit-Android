@@ -7,7 +7,7 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.serialization.ImplicitReflectionSerializer
 import org.jetbrains.anko.*
 import org.jetbrains.anko.sdk27.coroutines.onClick
-import webauthnkit.core.util.WKLogger
+import webauthnkit.core.util.WAKLogger
 
 @ExperimentalCoroutinesApi
 @ExperimentalUnsignedTypes
@@ -17,7 +17,7 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        WKLogger.available = true
+        WAKLogger.available = true
 
         verticalLayout {
 

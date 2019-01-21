@@ -2,7 +2,7 @@ package webauthnkit.core.util
 
 import android.util.Log
 
-object WKLogger {
+object WAKLogger {
 
     var available: Boolean = false
 

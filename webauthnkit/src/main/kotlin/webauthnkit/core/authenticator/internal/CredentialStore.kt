@@ -5,7 +5,7 @@ import android.content.Context
 import android.database.sqlite.SQLiteDatabase
 import android.database.sqlite.SQLiteOpenHelper
 import kotlinx.serialization.ImplicitReflectionSerializer
-import webauthnkit.core.util.WKLogger
+import webauthnkit.core.util.WAKLogger
 import webauthnkit.core.util.ByteArrayUtil
 import java.lang.Exception
 
@@ -26,24 +26,24 @@ class CredentialStore(context: Context) {
     )
 
     fun loadAllCredentialSources(rpId: String): List<PublicKeyCredentialSource> {
-        WKLogger.d(TAG, "loadAllCredentialSource")
+        WAKLogger.d(TAG, "loadAllCredentialSource")
         return db.searchByRpId(rpId)
     }
 
     fun loadAllCredentialSources(rpId: String, userHandle: ByteArray): List<PublicKeyCredentialSource> {
-        WKLogger.d(TAG, "loadAllCredentialSource")
+        WAKLogger.d(TAG, "loadAllCredentialSource")
         return loadAllCredentialSources(rpId).filter {
             ByteArrayUtil.equals(it.userHandle, userHandle)
         }
     }
 
     fun deleteAllCredentialSources(rpId: String) {
-        WKLogger.d(TAG, "deleteAllCredentialSource")
+        WAKLogger.d(TAG, "deleteAllCredentialSource")
         db.deleteByRpId(rpId)
     }
 
     fun deleteAllCredentialSources(rpId: String, userHandle: ByteArray) {
-        WKLogger.d(TAG, "deleteAllCredentialSource")
+        WAKLogger.d(TAG, "deleteAllCredentialSource")
         loadAllCredentialSources(rpId, userHandle).forEach {
             val key = ByteArrayUtil.toHex(it.id)
             db.delete(key)
@@ -51,13 +51,13 @@ class CredentialStore(context: Context) {
     }
 
     fun lookupCredentialSource(credentialId: ByteArray): PublicKeyCredentialSource? {
-        WKLogger.d(TAG, "lookupCredentialSource")
+        WAKLogger.d(TAG, "lookupCredentialSource")
         val key = ByteArrayUtil.toHex(credentialId)
         return db.findById(key)
     }
 
     fun saveCredentialSource(source: PublicKeyCredentialSource): Boolean {
-        WKLogger.d(TAG, "saveCredentialSource")
+        WAKLogger.d(TAG, "saveCredentialSource")
 
         val content = source.toBase64()
         return if (content != null) {
@@ -67,7 +67,7 @@ class CredentialStore(context: Context) {
                 content = content
             )
         } else {
-            WKLogger.d(TAG, "failed to encode content")
+            WAKLogger.d(TAG, "failed to encode content")
             false
         }
     }
@@ -110,11 +110,11 @@ class CredentialStoreDatabaseHelper(
 
 
     override fun onUpgrade(db: SQLiteDatabase, oldVer: Int, currentVer: Int) {
-        WKLogger.w(TAG, "onUpgrade")
+        WAKLogger.w(TAG, "onUpgrade")
     }
 
     fun findById(id: String): PublicKeyCredentialSource? {
-        WKLogger.w(TAG, "findById")
+        WAKLogger.w(TAG, "findById")
         val db = readableDatabase
         val cursor = db.query(TableName,
             arrayOf(ColumnId, ColumnRpId, ColumnContent),
@@ -129,21 +129,21 @@ class CredentialStoreDatabaseHelper(
                 val content = it.getString(it.getColumnIndex(ColumnContent))
                 PublicKeyCredentialSource.fromBase64(content)
             } else {
-                WKLogger.w(TAG, "not found")
+                WAKLogger.w(TAG, "not found")
                 null
             }
         }
     }
 
     fun delete(id: String):Boolean {
-        WKLogger.d(TAG, "delete")
+        WAKLogger.d(TAG, "delete")
         val db = writableDatabase
         db.beginTransaction()
         return try {
             db.delete(TableName, "$ColumnId = ?", arrayOf(id))
             true
         } catch (e: Exception) {
-            WKLogger.w(TAG, "failed to delete: " + e.localizedMessage)
+            WAKLogger.w(TAG, "failed to delete: " + e.localizedMessage)
             false
         } finally {
             db.endTransaction()
@@ -151,7 +151,7 @@ class CredentialStoreDatabaseHelper(
     }
 
     fun deleteByRpId(rpId: String): Boolean {
-        WKLogger.d(TAG, "deleteByRpId")
+        WAKLogger.d(TAG, "deleteByRpId")
         val db = writableDatabase
         db.beginTransaction()
 
@@ -159,7 +159,7 @@ class CredentialStoreDatabaseHelper(
             db.delete(TableName, "$ColumnRpId = ?", arrayOf(rpId))
             true
         } catch (e: Exception) {
-            WKLogger.w(TAG, "failed to delete: " + e.localizedMessage)
+            WAKLogger.w(TAG, "failed to delete: " + e.localizedMessage)
             false
         } finally {
             db.endTransaction()
@@ -167,7 +167,7 @@ class CredentialStoreDatabaseHelper(
     }
 
     fun deleteAll(): Boolean {
-        WKLogger.d(TAG, "deleteAll")
+        WAKLogger.d(TAG, "deleteAll")
         val db = writableDatabase
         db.beginTransaction()
 
@@ -175,7 +175,7 @@ class CredentialStoreDatabaseHelper(
             db.delete(TableName, null, null)
             true
         } catch (e: Exception) {
-            WKLogger.w(TAG, "failed to delete: " + e.localizedMessage)
+            WAKLogger.w(TAG, "failed to delete: " + e.localizedMessage)
             false
         } finally {
             db.endTransaction()
@@ -183,7 +183,7 @@ class CredentialStoreDatabaseHelper(
     }
 
     fun searchByRpId(rpId: String): List<PublicKeyCredentialSource> {
-        WKLogger.d(TAG, "searchByRpId")
+        WAKLogger.d(TAG, "searchByRpId")
 
         val db = readableDatabase
 
@@ -206,7 +206,7 @@ class CredentialStoreDatabaseHelper(
                 if (source != null) {
                     results.add(source)
                 } else {
-                    WKLogger.w(TAG, "invalid format of credential-source")
+                    WAKLogger.w(TAG, "invalid format of credential-source")
                     // XXX should delete this record?
                 }
             }
@@ -216,7 +216,7 @@ class CredentialStoreDatabaseHelper(
     }
 
     fun save(id: String, rpId: String, content: String): Boolean {
-        WKLogger.d(TAG, "save")
+        WAKLogger.d(TAG, "save")
 
         val db = writableDatabase
         db.beginTransaction()
@@ -229,7 +229,7 @@ class CredentialStoreDatabaseHelper(
             db.insertOrThrow(TableName, null, values)
             true
         } catch (e: Exception) {
-            WKLogger.w(TAG, "failed to insert: " + e.localizedMessage)
+            WAKLogger.w(TAG, "failed to insert: " + e.localizedMessage)
             false
         } finally {
             db.endTransaction()

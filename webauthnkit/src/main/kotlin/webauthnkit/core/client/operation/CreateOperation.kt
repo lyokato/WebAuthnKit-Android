@@ -17,7 +17,7 @@ import webauthnkit.core.PublicKeyCredentialCreationOptions
 import webauthnkit.core.authenticator.AttestationObject
 import webauthnkit.core.authenticator.MakeCredentialSession
 import webauthnkit.core.authenticator.MakeCredentialSessionListener
-import webauthnkit.core.util.WKLogger
+import webauthnkit.core.util.WAKLogger
 import webauthnkit.core.util.ByteArrayUtil
 
 @ExperimentalCoroutinesApi
@@ -41,10 +41,10 @@ class CreateOperation(
     private val sessionListener = object : MakeCredentialSessionListener {
 
         override fun onAvailable(session: MakeCredentialSession) {
-            WKLogger.d(TAG, "onAvailable")
+            WAKLogger.d(TAG, "onAvailable")
 
             if (stopped) {
-                WKLogger.d(TAG, "already stopped")
+                WAKLogger.d(TAG, "already stopped")
                 return
             }
 
@@ -54,21 +54,21 @@ class CreateOperation(
 
                 if (selection.authenticatorAttachment != null) {
                     if (selection.authenticatorAttachment != session.attachment) {
-                        WKLogger.d(TAG, "attachment doesn't match to RP's request")
+                        WAKLogger.d(TAG, "attachment doesn't match to RP's request")
                         stop(ErrorReason.Unsupported)
                         return
                     }
                 }
 
                 if (selection.requireResidentKey && !session.canStoreResidentKey()) {
-                    WKLogger.d(TAG, "This authenticator can't store resident-key")
+                    WAKLogger.d(TAG, "This authenticator can't store resident-key")
                     stop(ErrorReason.Unsupported)
                     return
                 }
 
                 if (selection.userVerification == UserVerificationRequirement.Required
                     && !session.canPerformUserVerification()) {
-                    WKLogger.d(TAG, "This authenticator can't perform user verification")
+                    WAKLogger.d(TAG, "This authenticator can't perform user verification")
                     stop(ErrorReason.Unsupported)
                     return
                 }
@@ -104,11 +104,11 @@ class CreateOperation(
         }
 
         override fun onCredentialCreated(session: MakeCredentialSession, attestationObject: AttestationObject) {
-            WKLogger.d(TAG, "onCredentialCreated")
+            WAKLogger.d(TAG, "onCredentialCreated")
 
             val attestedCred = attestationObject.authData.attestedCredentialData
             if (attestedCred == null) {
-                WKLogger.w(TAG, "attested credential data not found")
+                WAKLogger.w(TAG, "attested credential data not found")
                 dispatchError(ErrorReason.Unknown)
                 return
             }
@@ -124,7 +124,7 @@ class CreateOperation(
 
                 val bytes = attestationObject.toNone().toBytes()
                 if (bytes == null) {
-                    WKLogger.w(TAG, "failed to build attestation object")
+                    WAKLogger.w(TAG, "failed to build attestation object")
                     dispatchError(ErrorReason.Unknown)
                     return
                 }
@@ -143,7 +143,7 @@ class CreateOperation(
                 // encoded to byte array as it is
                 val bytes = attestationObject.toBytes()
                 if (bytes == null) {
-                    WKLogger.w(TAG, "failed to build attestation object")
+                    WAKLogger.w(TAG, "failed to build attestation object")
                     dispatchError(ErrorReason.Unknown)
                     return
                 }
@@ -170,12 +170,12 @@ class CreateOperation(
         }
 
         override fun onOperationStopped(session: MakeCredentialSession, reason: ErrorReason) {
-            WKLogger.d(TAG, "onOperationStopped")
+            WAKLogger.d(TAG, "onOperationStopped")
             stop(reason)
         }
 
         override fun onUnavailable(session: MakeCredentialSession) {
-            WKLogger.d(TAG, "onUnavailable")
+            WAKLogger.d(TAG, "onUnavailable")
             stop(ErrorReason.NotAllowed)
         }
 
@@ -185,18 +185,18 @@ class CreateOperation(
 
     suspend fun start(): MakeCredentialResponse = suspendCoroutine { cont ->
 
-        WKLogger.d(TAG, "start")
+        WAKLogger.d(TAG, "start")
 
         GlobalScope.launch {
 
             if (stopped) {
-                WKLogger.d(TAG, "already stopped")
+                WAKLogger.d(TAG, "already stopped")
                 cont.resumeWithException(BadOperationException())
                 return@launch
             }
 
             if (continuation != null) {
-                WKLogger.d(TAG, "continuation already exists")
+                WAKLogger.d(TAG, "continuation already exists")
                 cont.resumeWithException(BadOperationException())
                 return@launch
             }
@@ -211,29 +211,29 @@ class CreateOperation(
     }
 
     fun cancel() {
-        WKLogger.d(TAG, "cancel")
+        WAKLogger.d(TAG, "cancel")
     }
 
     private fun stop(reason: ErrorReason) {
-        WKLogger.d(TAG, "stop")
+        WAKLogger.d(TAG, "stop")
         stopInternal(reason)
         dispatchError(reason)
     }
 
     private fun completed() {
-        WKLogger.d(TAG, "completed")
+        WAKLogger.d(TAG, "completed")
         stopTimer()
     }
 
     private fun stopInternal(reason: ErrorReason) {
-        WKLogger.d(TAG, "stopInternal")
+        WAKLogger.d(TAG, "stopInternal")
         if (continuation == null) {
-            WKLogger.d(TAG, "not started")
+            WAKLogger.d(TAG, "not started")
            // not started
             return
         }
         if (stopped) {
-            WKLogger.d(TAG, "already stopped")
+            WAKLogger.d(TAG, "already stopped")
             return
         }
         stopTimer()
@@ -242,7 +242,7 @@ class CreateOperation(
     }
 
     private fun dispatchError(reason: ErrorReason) {
-        WKLogger.d(TAG, "dispatchError")
+        WAKLogger.d(TAG, "dispatchError")
         GlobalScope.launch(Dispatchers.Unconfined) {
             continuation?.resumeWithException(reason.rawValue)
         }
@@ -251,7 +251,7 @@ class CreateOperation(
     private var timer: Timer? = null
 
     private fun startTimer() {
-        WKLogger.d(TAG, "startTimer")
+        WAKLogger.d(TAG, "startTimer")
         stopTimer()
         timer = Timer()
         timer!!.schedule(object: TimerTask(){
@@ -263,18 +263,18 @@ class CreateOperation(
     }
 
     private fun stopTimer() {
-        WKLogger.d(TAG, "stopTimer")
+        WAKLogger.d(TAG, "stopTimer")
         timer?.cancel()
         timer = null
     }
 
     private fun onTimeout() {
-        WKLogger.d(TAG, "onTimeout")
+        WAKLogger.d(TAG, "onTimeout")
         stop(ErrorReason.Timeout)
     }
 
     private fun judgeUserVerificationExecution(session: MakeCredentialSession): Boolean {
-        WKLogger.d(TAG, "judgeUserVerificationExecution")
+        WAKLogger.d(TAG, "judgeUserVerificationExecution")
 
         val userVerificationRequest =
             options.authenticatorSelection?.userVerification

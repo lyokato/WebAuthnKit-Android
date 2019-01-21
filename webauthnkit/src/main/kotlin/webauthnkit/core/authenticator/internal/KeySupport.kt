@@ -6,7 +6,7 @@ import android.os.Build
 import android.security.KeyPairGeneratorSpec
 import android.security.keystore.KeyGenParameterSpec
 import android.security.keystore.KeyProperties
-import webauthnkit.core.util.WKLogger
+import webauthnkit.core.util.WAKLogger
 import webauthnkit.core.authenticator.*
 import webauthnkit.core.util.ByteArrayUtil
 import java.math.BigInteger
@@ -47,11 +47,11 @@ class KeySupportChooser(private val context: Context) {
     }
 
     fun choose(algorithms: List<Int>): KeySupport? {
-        WKLogger.d(TAG, "choose support module")
+        WAKLogger.d(TAG, "choose support module")
         return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             chooseInternal(algorithms)
         } else {
-            WKLogger.d(TAG, "this android version is below M, use legacy version")
+            WAKLogger.d(TAG, "this android version is below M, use legacy version")
             chooseLegacyInternal(algorithms)
         }
     }
@@ -64,11 +64,11 @@ class KeySupportChooser(private val context: Context) {
                     return ECDSAKeySupport(alg)
                 }
                 else -> {
-                    WKLogger.d(TAG, "key support for this algorithm not found")
+                    WAKLogger.d(TAG, "key support for this algorithm not found")
                 }
             }
         }
-        WKLogger.w(TAG, "no proper support module found")
+        WAKLogger.w(TAG, "no proper support module found")
         return null
     }
 
@@ -79,11 +79,11 @@ class KeySupportChooser(private val context: Context) {
                     return LegacyRSAKeySupport(context, alg)
                 }
                 else -> {
-                    WKLogger.d(TAG, "key support for this algorithm not found")
+                    WAKLogger.d(TAG, "key support for this algorithm not found")
                 }
             }
         }
-        WKLogger.w(TAG, "no proper support module found")
+        WAKLogger.w(TAG, "no proper support module found")
         return null
     }
 }
@@ -132,7 +132,7 @@ class ECDSAKeySupport(
 
             )
         } catch (e: Exception) {
-            WKLogger.w(TAG, "failed to create key pair: " + e.localizedMessage)
+            WAKLogger.w(TAG, "failed to create key pair: " + e.localizedMessage)
             return null
         }
 
@@ -199,7 +199,7 @@ class ECDSAKeySupport(
 
         val authenticatorDataBytes = authenticatorData.toBytes()
         if (authenticatorDataBytes == null) {
-            WKLogger.d(TAG, "failed to build authenticator data")
+            WAKLogger.d(TAG, "failed to build authenticator data")
             return null
         }
 
@@ -208,7 +208,7 @@ class ECDSAKeySupport(
 
         val sig = this.sign(alias, bytesToBeSigned.toByteArray())
         if (sig == null) {
-            WKLogger.d(TAG, "failed to sign authenticator data")
+            WAKLogger.d(TAG, "failed to sign authenticator data")
             return null
         }
 
@@ -218,7 +218,7 @@ class ECDSAKeySupport(
 
         if (useSecureHardware(alias)) {
 
-            WKLogger.d(TAG,
+            WAKLogger.d(TAG,
                 "this android device supports secure-hardware, "
                     + "so, use 'attestation-key' format")
 
@@ -242,7 +242,7 @@ class ECDSAKeySupport(
 
         } else {
 
-            WKLogger.d(TAG,
+            WAKLogger.d(TAG,
                 "this android device doesn't support secure-hardware, "
                     + "so, build self attestation")
 
@@ -282,7 +282,7 @@ class LegacyRSAKeySupport(
                 e   = e
             )
         } catch (e: Exception) {
-            WKLogger.w(TAG, "failed to create key pair" + e.localizedMessage)
+            WAKLogger.w(TAG, "failed to create key pair" + e.localizedMessage)
             return null
         }
     }
@@ -305,7 +305,7 @@ class LegacyRSAKeySupport(
         keyStore.load(null)
         val entry = keyStore.getEntry(alias, null) as? KeyStore.PrivateKeyEntry
         if (entry == null) {
-            WKLogger.d(TAG, "failed to obtain private key from KeyStore")
+            WAKLogger.d(TAG, "failed to obtain private key from KeyStore")
             return null
         }
         val signer = Signature.getInstance(SignAlgorithmType.SHA256WithRSA)
@@ -322,7 +322,7 @@ class LegacyRSAKeySupport(
 
         val authenticatorDataBytes = authenticatorData.toBytes()
         if (authenticatorDataBytes == null) {
-            WKLogger.d(TAG, "failed to build authenticator data")
+            WAKLogger.d(TAG, "failed to build authenticator data")
             return null
         }
 
@@ -331,7 +331,7 @@ class LegacyRSAKeySupport(
 
         val sig = this.sign(alias, bytesToBeSigned.toByteArray())
         if (sig == null) {
-            WKLogger.d(TAG, "failed to sign authenticator data")
+            WAKLogger.d(TAG, "failed to sign authenticator data")
             return null
         }
 

@@ -18,7 +18,7 @@ import webauthnkit.core.authenticator.internal.InternalAuthenticatorSetting
 import webauthnkit.core.authenticator.internal.KeySupportChooser
 import webauthnkit.core.authenticator.internal.PublicKeyCredentialSource
 import webauthnkit.core.authenticator.internal.ui.UserConsentUI
-import webauthnkit.core.util.WKLogger
+import webauthnkit.core.util.WAKLogger
 import webauthnkit.core.util.ByteArrayUtil
 
 @ExperimentalCoroutinesApi
@@ -54,7 +54,7 @@ class InternalGetAssertionSession(
         requireUserPresence:           Boolean,
         requireUserVerification:       Boolean
     ) {
-        WKLogger.d(TAG, "getAssertion")
+        WAKLogger.d(TAG, "getAssertion")
 
         GlobalScope.launch {
 
@@ -62,7 +62,7 @@ class InternalGetAssertionSession(
                 gatherCredentialSources(rpId, allowCredentialDescriptorList)
 
             if (sources.isEmpty()) {
-                WKLogger.d(TAG, "allowable credential source not found, stop session")
+                WAKLogger.d(TAG, "allowable credential source not found, stop session")
                 stop(ErrorReason.NotAllowed)
                 return@launch
             }
@@ -136,18 +136,18 @@ class InternalGetAssertionSession(
     }
 
     override fun canPerformUserVerification(): Boolean {
-        WKLogger.d(TAG, "canPerformUserVerification")
+        WAKLogger.d(TAG, "canPerformUserVerification")
         return this.setting.allowUserVerification
     }
 
     override fun start() {
-        WKLogger.d(TAG, "start")
+        WAKLogger.d(TAG, "start")
         if (stopped) {
-            WKLogger.d(TAG, "already stopped")
+            WAKLogger.d(TAG, "already stopped")
             return
         }
         if (started) {
-            WKLogger.d(TAG, "already started")
+            WAKLogger.d(TAG, "already started")
             return
         }
         started = true
@@ -155,9 +155,9 @@ class InternalGetAssertionSession(
     }
 
     override fun cancel(reason: ErrorReason) {
-        WKLogger.d(TAG, "cancel")
+        WAKLogger.d(TAG, "cancel")
         if (stopped) {
-            WKLogger.d(TAG, "already stopped")
+            WAKLogger.d(TAG, "already stopped")
             return
         }
         /* TODO cancel UI
@@ -170,13 +170,13 @@ class InternalGetAssertionSession(
     }
 
     private fun stop(reason: ErrorReason) {
-        WKLogger.d(TAG, "stop")
+        WAKLogger.d(TAG, "stop")
         if (!started) {
-            WKLogger.d(TAG, "not started")
+            WAKLogger.d(TAG, "not started")
             return
         }
         if (stopped) {
-            WKLogger.d(TAG, "already stopped")
+            WAKLogger.d(TAG, "already stopped")
             return
         }
         stopped = true
@@ -184,7 +184,7 @@ class InternalGetAssertionSession(
     }
 
     private fun onComplete() {
-        WKLogger.d(TAG, "onComplete")
+        WAKLogger.d(TAG, "onComplete")
         stopped = true
     }
 

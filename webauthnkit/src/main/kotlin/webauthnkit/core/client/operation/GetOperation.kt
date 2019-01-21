@@ -16,7 +16,7 @@ import webauthnkit.core.*
 import webauthnkit.core.authenticator.AuthenticatorAssertionResult
 import webauthnkit.core.authenticator.GetAssertionSession
 import webauthnkit.core.authenticator.GetAssertionSessionListener
-import webauthnkit.core.util.WKLogger
+import webauthnkit.core.util.WAKLogger
 import webauthnkit.core.util.ByteArrayUtil
 
 @ExperimentalCoroutinesApi
@@ -41,16 +41,16 @@ class GetOperation(
     private val sessionListener = object : GetAssertionSessionListener {
 
         override fun onAvailable(session: GetAssertionSession) {
-            WKLogger.d(TAG, "onAvailable")
+            WAKLogger.d(TAG, "onAvailable")
 
             if (stopped) {
-                WKLogger.d(TAG, "already stopped")
+                WAKLogger.d(TAG, "already stopped")
                 return
             }
 
             if (options.userVerification == UserVerificationRequirement.Required
                 && !session.canPerformUserVerification()) {
-                WKLogger.w(TAG, "user verification required, but this authenticator doesn't support")
+                WAKLogger.w(TAG, "user verification required, but this authenticator doesn't support")
                 stop(ErrorReason.Unsupported)
                 return
             }
@@ -77,7 +77,7 @@ class GetOperation(
                     }
 
                 if (allowDescriptorList.isEmpty()) {
-                    WKLogger.d(TAG, "no matched credentials exists on this authenticator")
+                    WAKLogger.d(TAG, "no matched credentials exists on this authenticator")
                     stop(ErrorReason.NotAllowed)
                     return
                 }
@@ -99,7 +99,7 @@ class GetOperation(
 
         override fun onCredentialDiscovered(session: GetAssertionSession,
                                             assertion: AuthenticatorAssertionResult) {
-            WKLogger.d(TAG, "onCredentialCreated")
+            WAKLogger.d(TAG, "onCredentialCreated")
 
 
             val credId = if (savedCredentialId == null) {
@@ -107,7 +107,7 @@ class GetOperation(
             } else {
                 val selectedCredId = assertion.credentialId
                 if (selectedCredId == null) {
-                    WKLogger.w(TAG, "selected credential Id not found")
+                    WAKLogger.w(TAG, "selected credential Id not found")
                     stop(ErrorReason.Unknown)
                     return
                 }
@@ -135,11 +135,11 @@ class GetOperation(
         }
 
         override fun onOperationStopped(session: GetAssertionSession, reason: ErrorReason) {
-            WKLogger.d(TAG, "onOperationStopped")
+            WAKLogger.d(TAG, "onOperationStopped")
         }
 
         override fun onUnavailable(session: GetAssertionSession) {
-            WKLogger.d(TAG, "onUnavailable")
+            WAKLogger.d(TAG, "onUnavailable")
             stop(ErrorReason.NotAllowed)
         }
     }
@@ -148,11 +148,11 @@ class GetOperation(
 
     suspend fun start(): GetAssertionResponse = suspendCoroutine { cont ->
 
-        WKLogger.d(TAG, "start")
+        WAKLogger.d(TAG, "start")
 
         GlobalScope.launch {
             if (stopped) {
-                WKLogger.d(TAG, "already stopped")
+                WAKLogger.d(TAG, "already stopped")
                 cont.resumeWithException(BadOperationException())
                 return@launch
             }
@@ -167,29 +167,29 @@ class GetOperation(
     }
 
     fun cancel() {
-        WKLogger.d(TAG, "cancel")
+        WAKLogger.d(TAG, "cancel")
     }
 
     private fun stop(reason: ErrorReason) {
-        WKLogger.d(TAG, "stop")
+        WAKLogger.d(TAG, "stop")
         stopInternal(reason)
         dispatchError(reason)
     }
 
     private fun completed() {
-        WKLogger.d(TAG, "completed")
+        WAKLogger.d(TAG, "completed")
         stopTimer()
     }
 
     private fun stopInternal(reason: ErrorReason) {
-        WKLogger.d(TAG, "stopInternal")
+        WAKLogger.d(TAG, "stopInternal")
         if (continuation == null) {
-            WKLogger.d(TAG, "not started")
+            WAKLogger.d(TAG, "not started")
             // not started
             return
         }
         if (stopped) {
-            WKLogger.d(TAG, "already stopped")
+            WAKLogger.d(TAG, "already stopped")
             return
         }
         stopTimer()
@@ -198,7 +198,7 @@ class GetOperation(
     }
 
     private fun dispatchError(reason: ErrorReason) {
-        WKLogger.d(TAG, "dispatchError")
+        WAKLogger.d(TAG, "dispatchError")
         GlobalScope.launch(Dispatchers.Unconfined) {
             continuation?.resumeWithException(reason.rawValue)
         }
@@ -207,7 +207,7 @@ class GetOperation(
     private var timer: Timer? = null
 
     private fun startTimer() {
-        WKLogger.d(TAG, "startTimer")
+        WAKLogger.d(TAG, "startTimer")
         stopTimer()
         timer = Timer()
         timer!!.schedule(object: TimerTask(){
@@ -219,18 +219,18 @@ class GetOperation(
     }
 
     private fun stopTimer() {
-        WKLogger.d(TAG, "stopTimer")
+        WAKLogger.d(TAG, "stopTimer")
         timer?.cancel()
         timer = null
     }
 
     private fun onTimeout() {
-        WKLogger.d(TAG, "onTimeout")
+        WAKLogger.d(TAG, "onTimeout")
         stop(ErrorReason.Timeout)
     }
 
     private fun judgeUserVerificationExecution(session: GetAssertionSession): Boolean {
-        WKLogger.d(CreateOperation.TAG, "judgeUserVerificationExecution")
+        WAKLogger.d(CreateOperation.TAG, "judgeUserVerificationExecution")
 
         return when (options.userVerification) {
             UserVerificationRequirement.Required    -> true
