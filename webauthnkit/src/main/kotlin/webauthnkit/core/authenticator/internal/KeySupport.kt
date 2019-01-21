@@ -184,8 +184,9 @@ class ECDSAKeySupport(
 
     private fun useSecureHardware(alias: String): Boolean {
         val keyStore = KeyStore.getInstance(KeyStoreType.Android)
-        val key = keyStore.getKey(alias, null) as SecretKey
-        val factory = SecretKeyFactory.getInstance(key.algorithm, KeyStoreType.Android)
+        keyStore.load(null)
+        val key= keyStore.getKey(alias, null)
+        val factory = KeyFactory.getInstance(key.algorithm, KeyStoreType.Android)
         val keyInfo = factory.getKeySpec(key, KeyInfo::class.java) as KeyInfo
         return keyInfo.isInsideSecureHardware
         // && keyInfo.isUserAuthenticationRequirementEnforcedBySecureHardware

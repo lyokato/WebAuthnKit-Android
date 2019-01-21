@@ -130,20 +130,20 @@ enum class AuthenticatorAttachment(val rawValue: String) {
 }
 
 data class AuthenticatorSelectionCriteria(
-    var authenticatorAttachment: AuthenticatorAttachment?,
+    var authenticatorAttachment: AuthenticatorAttachment? = null,
     var requireResidentKey: Boolean = true,
     var userVerification: UserVerificationRequirement = UserVerificationRequirement.Required
 )
 
 @ExperimentalUnsignedTypes
 class PublicKeyCredentialCreationOptions(
-    var rp: PublicKeyCredentialRpEntity,
-    var user: PublicKeyCredentialUserEntity,
-    var challenge: UByteArray,
+    var rp: PublicKeyCredentialRpEntity = PublicKeyCredentialRpEntity(),
+    var user: PublicKeyCredentialUserEntity = PublicKeyCredentialUserEntity(),
+    var challenge: UByteArray = UByteArray(0),
     var pubKeyCredParams: MutableList<PublicKeyCredentialParameters> = ArrayList(),
-    var timeout: Long?,
+    var timeout: Long? = null,
     var excludeCredentials: MutableList<PublicKeyCredentialDescriptor> = ArrayList(),
-    var authenticatorSelection: AuthenticatorSelectionCriteria?,
+    var authenticatorSelection: AuthenticatorSelectionCriteria? = null,
     var attestation: AttestationConveyancePreference = AttestationConveyancePreference.Direct,
     var extensions: Map<String, Any> = HashMap()
 ) {
@@ -154,16 +154,16 @@ class PublicKeyCredentialCreationOptions(
 
 @ExperimentalUnsignedTypes
 data class PublicKeyCredentialRequestOptions(
-    var challenge: UByteArray,
-    var rpId: String?,
+    var challenge: UByteArray = UByteArray(0),
+    var rpId: String? = null,
     var allowCredential: MutableList<PublicKeyCredentialDescriptor> = ArrayList(),
     var userVerification: UserVerificationRequirement = UserVerificationRequirement.Required,
-    var timeout: Long
+    var timeout: Long? = null
 ) {
     fun addAllowCredential(credentialId: UByteArray, transports: MutableList<AuthenticatorTransport>) {
         this.allowCredential.add(
             PublicKeyCredentialDescriptor(
-                id = credentialId,
+                id         = credentialId,
                 transports = transports
             )
         )

@@ -8,26 +8,30 @@ object WAKLogger {
 
     fun d(tag: String?, msg: String) {
         if (available) {
-            Log.d(tag, msg)
+            Log.d(tag, wrapMessage(msg))
         }
     }
 
     fun e(tag: String?, msg: String) {
         if (available) {
-            Log.e(tag, msg)
+            Log.e(tag, wrapMessage(msg))
         }
     }
 
     fun i(tag: String?, msg: String) {
         if (available) {
-            Log.i(tag, msg)
+            Log.i(tag, wrapMessage(msg))
         }
     }
 
     fun w(tag: String?, msg: String) {
         if (available) {
-            Log.w(tag, msg)
+            Log.w(tag, wrapMessage(msg))
         }
+    }
+
+    private fun wrapMessage(msg: String): String {
+        return "<WebAuthnKit> $msg"
     }
 
 }

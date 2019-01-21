@@ -1,22 +1,35 @@
 package webauthnkit.example
 
+import android.content.Intent
 import android.graphics.Color
 import android.os.Bundle
 import android.support.v7.app.AppCompatActivity;
+import com.jaredrummler.materialspinner.MaterialSpinner
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.launch
 import kotlinx.serialization.ImplicitReflectionSerializer
 import org.jetbrains.anko.*
+import org.jetbrains.anko.sdk27.coroutines.onClick
+import webauthnkit.core.*
+import webauthnkit.core.authenticator.COSEAlgorithmIdentifier
 import webauthnkit.core.authenticator.internal.CredentialStore
 import webauthnkit.core.authenticator.internal.InternalAuthenticator
 import webauthnkit.core.authenticator.internal.KeySupportChooser
 import webauthnkit.core.authenticator.internal.ui.UserConsentUI
 
 import webauthnkit.core.client.WebAuthnClient
+import webauthnkit.core.util.ByteArrayUtil
+import webauthnkit.core.util.WAKLogger
 
 @ExperimentalCoroutinesApi
 @ExperimentalUnsignedTypes
 @ImplicitReflectionSerializer
 class RegistrationActivity : AppCompatActivity() {
+
+    companion object {
+        private val TAG = this::class.simpleName
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
 
@@ -33,66 +46,67 @@ class RegistrationActivity : AppCompatActivity() {
                 text = "User Id"
             }
 
-            val userId = editText {
+            val userIdField = editText {
                 singleLine = true
             }
-            userId.setText("lyokato")
+            userIdField.setText("lyokato")
 
             textView {
                 text = "User Name"
             }
 
-            val userName = editText {
+            val userNameField = editText {
                 singleLine = true
             }
-            userName.setText("lyokato")
+            userNameField.setText("lyokato")
 
             textView {
                 text = "User Display Name"
             }
 
-            val userDisplayName = editText {
+            val userDisplayNameField = editText {
                 singleLine = true
             }
-            userDisplayName.setText("Lyo Kato")
+            userDisplayNameField.setText("Lyo Kato")
 
             textView {
                 text = "User ICON URL (Optional)"
             }
 
-            val userIconURL = editText {
+            val userIconURLField = editText {
                 singleLine = true
             }
-            userIconURL.setText("https://www.gravatar.com/avatar/0b63462eb18efbfb764b0c226abff4a0?s=440&d=retro")
+            userIconURLField.setText("https://www.gravatar.com/avatar/0b63462eb18efbfb764b0c226abff4a0?s=440&d=retro")
 
             textView {
                 text = "Relying Party"
             }
 
-            val relyingParty = editText {
+            val relyingPartyField = editText {
                 singleLine = true
             }
-            relyingParty.setText("https://example.org")
+            relyingPartyField.setText("https://example.org")
 
             textView {
                 text = "Relying Party ICON"
             }
 
-            val relyingPartyICON = editText {
+            val relyingPartyICONField = editText {
                 singleLine = true
             }
-            relyingPartyICON.setText("https://developers.google.com/identity/images/g-logo.png")
+            relyingPartyICONField.setText("https://developers.google.com/identity/images/g-logo.png")
 
             textView {
                 text = "Challenge"
             }
 
-            val challenge = editText {
+            val challengeField = editText {
                 singleLine = true
             }
-            challenge.setText("aed9c789543b")
+            challengeField.setText("aed9c789543b")
 
             val spinnerWidth = 160
+            var userVerificationSpinner: MaterialSpinner? = null
 
             relativeLayout {
 
@@ -116,7 +130,7 @@ class RegistrationActivity : AppCompatActivity() {
                     centerVertically()
                 }
 
-                val userVerification = materialSpinner {
+                userVerificationSpinner = materialSpinner {
 
                     padding = dip(10)
 
@@ -129,8 +143,10 @@ class RegistrationActivity : AppCompatActivity() {
                     }
                 }
 
-                userVerification.setItems(userVerificationOptions)
+                userVerificationSpinner!!.setItems(userVerificationOptions)
             }
+
+            var attestationConveyanceSpinner: MaterialSpinner? = null
 
             relativeLayout {
 
@@ -154,7 +170,7 @@ class RegistrationActivity : AppCompatActivity() {
                     centerVertically()
                 }
 
-                val attestationConveyance = materialSpinner {
+                attestationConveyanceSpinner = materialSpinner {
 
                     padding = dip(10)
 
@@ -167,17 +183,96 @@ class RegistrationActivity : AppCompatActivity() {
                     }
                 }
 
-                attestationConveyance.setItems(attestationConveyanceOptions)
+                attestationConveyanceSpinner!!.setItems(attestationConveyanceOptions)
             }
 
             button("Register") {
-                onExecute()
+
+                onClick {
+
+                    // TODO validation
+                    val userId          = userIdField.text.toString()
+                    val username        = userNameField.text.toString()
+                    val userDisplayName = userDisplayNameField.text.toString()
+                    val userIconURL     = userIconURLField.text.toString()
+                    val relyingParty    = relyingPartyField.text.toString()
+                    val relyingPartyICON= relyingPartyICONField.text.toString()
+                    val challenge       = challengeField.text.toString()
+
+                    val userVerification  =
+                        when (userVerificationOptions[userVerificationSpinner!!.selectedIndex]) {
+                            "Required"    -> { UserVerificationRequirement.Required    }
+                            "Preferred"   -> { UserVerificationRequirement.Preferred   }
+                            "Discouraged" -> { UserVerificationRequirement.Discouraged }
+                            else          -> { UserVerificationRequirement.Preferred   }
+                        }
+                    val attestationConveyance =
+                        when (attestationConveyanceOptions[attestationConveyanceSpinner!!.selectedIndex]) {
+                            "Direct"   -> { AttestationConveyancePreference.Direct   }
+                            "Indirect" -> { AttestationConveyancePreference.Indirect }
+                            "None"     -> { AttestationConveyancePreference.None     }
+                            else       -> { AttestationConveyancePreference.Direct   }
+                        }
+
+
+                    onExecute(
+                        userId                = userId,
+                        username              = username,
+                        userDisplayName       = userDisplayName,
+                        userIconURL           = userIconURL,
+                        relyingParty          = relyingParty,
+                        relyingPartyICON      = relyingPartyICON,
+                        challenge             = challenge,
+                        userVerification      = userVerification,
+                        attestationConveyance = attestationConveyance
+                    )
+
+                }
+
             }
         }
     }
 
-    private fun onExecute() {
+    var client: WebAuthnClient? = null
 
+    private fun onExecute(userId: String, username: String, userDisplayName: String,
+                          userIconURL: String, relyingParty: String, relyingPartyICON: String,
+                          challenge: String, userVerification: UserVerificationRequirement,
+                          attestationConveyance: AttestationConveyancePreference) {
+
+        var options = PublicKeyCredentialCreationOptions()
+        options.challenge = ByteArrayUtil.fromHex(challenge).toUByteArray()
+        options.user.id = userId
+        options.user.name = username
+        options.user.icon = userIconURL
+        options.rp.id = relyingParty
+        options.rp.name = relyingParty
+        options.rp.icon = relyingPartyICON
+        options.attestation = attestationConveyance
+        options.addPubKeyCredParam(alg = COSEAlgorithmIdentifier.es256)
+        options.authenticatorSelection = AuthenticatorSelectionCriteria(
+            requireResidentKey = true,
+            userVerification   = userVerification
+        )
+
+        client = createClient()
+        val operation = client!!.create(options)
+
+        GlobalScope.launch {
+            val cred = operation.start()
+            showResultActivity(cred)
+        }
+    }
+
+    private fun showResultActivity(cred: MakeCredentialResponse) {
+        runOnUiThread {
+            val intent = Intent(this, RegistrationResultActivity::class.java)
+            intent.putExtra("CRED_ID", cred.id)
+            intent.putExtra("CRED_RAW", ByteArrayUtil.encodeBase64URL(cred.rawId))
+            intent.putExtra("ATTESTATION", ByteArrayUtil.encodeBase64URL(cred.response.attestationObject))
+            intent.putExtra("CLIENT_JSON", cred.response.clientDataJSON)
+            startActivity(intent)
+        }
     }
 
     private fun createClient(): WebAuthnClient {

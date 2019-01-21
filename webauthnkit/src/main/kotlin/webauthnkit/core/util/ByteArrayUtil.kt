@@ -1,6 +1,7 @@
 package webauthnkit.core.util
 
 import android.util.Base64
+import kotlinx.serialization.internal.HexConverter
 import kotlinx.serialization.toUtf8Bytes
 import java.nio.ByteBuffer
 import java.security.MessageDigest
@@ -41,11 +42,15 @@ object ByteArrayUtil {
     }
 
     fun merge(b1: UByteArray, b2: UByteArray): UByteArray {
+        return merge(b1.toByteArray(), b2.toByteArray()).toUByteArray()
+    }
+
+    fun merge(b1: ByteArray, b2: ByteArray): ByteArray {
         val b1l = b1.size
         val b2l = b2.size
-        val result = UByteArray(b1l + b2l)
+        val result = ByteArray(b1l + b2l)
         System.arraycopy(b1, 0, result, 0, b1l)
-        System.arraycopy(b1, 0, result, b1l, b2l)
+        System.arraycopy(b2, 0, result, b1l, b2l)
         return result
     }
 
@@ -62,13 +67,19 @@ object ByteArrayUtil {
         }
     }
 
+    fun fromHex(str: String): ByteArray {
+        return HexConverter.parseHexBinary(str)
+    }
+
     fun toHex(bytes: ByteArray): String {
+        return HexConverter.printHexBinary(bytes, lowerCase = true)
+        /*
         return buildString {
             for (b in bytes) {
                 append(String.format("%02X", b))
             }
         }
-
+        */
     }
 
 
