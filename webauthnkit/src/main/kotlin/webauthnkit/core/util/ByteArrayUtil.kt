@@ -20,7 +20,7 @@ object ByteArrayUtil {
     }
 
     fun encodeBase64URL(bytes: ByteArray): String {
-        return Base64.encodeToString(bytes, Base64.URL_SAFE)
+        return Base64.encodeToString(bytes, Base64.URL_SAFE or Base64.NO_PADDING or Base64.NO_WRAP)
     }
 
     fun encodeBase64URL(bytes: UByteArray): String {

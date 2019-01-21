@@ -1,7 +1,5 @@
 package webauthnkit.core
 
-import kotlinx.serialization.Optional
-import kotlinx.serialization.Serializable
 import java.lang.RuntimeException
 
 class BadOperationException(msg: String? = null) : RuntimeException(msg)
@@ -22,16 +20,25 @@ enum class ErrorReason(val rawValue: RuntimeException) {
     NotAllowed(NotAllowedException()),
     Unsupported(UnsupportedException()),
     Unknown(UnknownException())
+
 }
 
 enum class PublicKeyCredentialType(val rawValue: String) {
-    PublicKey("public-key")
+    PublicKey("public-key");
+
+    override fun toString(): String {
+        return rawValue
+    }
 }
 
 enum class UserVerificationRequirement(val rawValue: String) {
     Required("required"),
     Preferred("preferred"),
-    Discouraged("discouraged")
+    Discouraged("discouraged");
+
+    override fun toString(): String {
+        return rawValue
+    }
 }
 
 open class AuthenticatorResponse
@@ -62,14 +69,18 @@ enum class AuthenticatorTransport(val rawValue: String) {
     USB("usb"),
     BLE("ble"),
     NFC("nfc"),
-    Internal("internal"),
+    Internal("internal");
+
+    override fun toString(): String {
+        return rawValue
+    }
 }
 
 @ExperimentalUnsignedTypes
 data class PublicKeyCredentialDescriptor(
     val type: PublicKeyCredentialType = PublicKeyCredentialType.PublicKey,
     var id: UByteArray,
-    var transports: MutableList<AuthenticatorTransport> = ArrayList<AuthenticatorTransport>()
+    var transports: MutableList<AuthenticatorTransport> = ArrayList()
 ) {
 
     fun addTransport(transport: AuthenticatorTransport) {
@@ -91,9 +102,14 @@ data class PublicKeyCredentialUserEntity(
 )
 
 enum class AttestationConveyancePreference(val rawValue: String) {
+
     None("none"),
     Direct("direct"),
-    Indirect("indirect")
+    Indirect("indirect");
+
+    override fun toString(): String {
+        return rawValue
+    }
 }
 
 data class PublicKeyCredentialParameters(
@@ -103,7 +119,12 @@ data class PublicKeyCredentialParameters(
 
 enum class TokenBindingStatus(val rawValue: String) {
     Present("present"),
-    Supported("supported")
+    Supported("supported");
+
+    override fun toString(): String {
+        return rawValue
+    }
+
 }
 
 data class TokenBinding(
@@ -113,20 +134,28 @@ data class TokenBinding(
 
 enum class CollectedClientDataType(val rawValue: String) {
     Create("webauthn.create"),
-    Get("webauthn.get")
+    Get("webauthn.get");
+
+    override fun toString(): String {
+        return rawValue
+    }
 }
 
-@Serializable
 data class CollectedClientData(
-    val type: CollectedClientDataType,
+    //val type: CollectedClientDataType,
+    val type: String,
     var challenge: String,
     var origin: String,
-    @Optional var tokenBinding: TokenBinding? = null
+    var tokenBinding: TokenBinding? = null
 )
 
 enum class AuthenticatorAttachment(val rawValue: String) {
     Platform("platform"),
-    CrossPlatform("cross-platform")
+    CrossPlatform("cross-platform");
+
+    override fun toString(): String {
+        return rawValue
+    }
 }
 
 data class AuthenticatorSelectionCriteria(

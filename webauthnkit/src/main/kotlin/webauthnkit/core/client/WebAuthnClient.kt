@@ -1,9 +1,9 @@
 package webauthnkit.core.client
 
+import com.fasterxml.jackson.annotation.JsonInclude
+import com.fasterxml.jackson.databind.ObjectMapper
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.serialization.ImplicitReflectionSerializer
-import kotlinx.serialization.json.JSON
-import kotlinx.serialization.stringify
 
 import webauthnkit.core.CollectedClientData
 import webauthnkit.core.CollectedClientDataType
@@ -105,14 +105,19 @@ class WebAuthnClient(
         WAKLogger.d(TAG, "generateClientData")
 
         val data = CollectedClientData(
-            type      = type,
+            type      = type.toString(),
             challenge = challenge,
             origin    = origin
         )
 
-        val json = JSON.stringify(data)
+        val json = encodeJSON(data)
         val hash = ByteArrayUtil.sha256(json).toUByteArray()
 
         return Triple(data, json, hash)
+    }
+
+    private fun encodeJSON(data: CollectedClientData): String {
+        //val json = JSON.stringify(data)
+        return ObjectMapper().setSerializationInclusion(JsonInclude.Include.NON_NULL).writeValueAsString(data)
     }
 }

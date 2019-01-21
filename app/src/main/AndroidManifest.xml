@@ -23,7 +23,17 @@
                 android:theme="@style/AppTheme.NoActionBar">
         </activity>
         <activity
+                android:name=".AuthenticationResultActivity"
+                android:label="@string/title_activity_authentication"
+                android:theme="@style/AppTheme.NoActionBar">
+        </activity>
+        <activity
                 android:name=".RegistrationActivity"
+                android:label="@string/title_activity_registration"
+                android:theme="@style/AppTheme.NoActionBar">
+        </activity>
+        <activity
+                android:name=".RegistrationResultActivity"
                 android:label="@string/title_activity_registration"
                 android:theme="@style/AppTheme.NoActionBar">
         </activity>

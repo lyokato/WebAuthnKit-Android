@@ -260,6 +260,7 @@ class RegistrationActivity : AppCompatActivity() {
 
         GlobalScope.launch {
             val cred = operation.start()
+            WAKLogger.d(TAG, "CHALLENGE:" + ByteArrayUtil.encodeBase64URL(options.challenge))
             showResultActivity(cred)
         }
     }
@@ -268,7 +269,7 @@ class RegistrationActivity : AppCompatActivity() {
         runOnUiThread {
             val intent = Intent(this, RegistrationResultActivity::class.java)
             intent.putExtra("CRED_ID", cred.id)
-            intent.putExtra("CRED_RAW", ByteArrayUtil.encodeBase64URL(cred.rawId))
+            intent.putExtra("CRED_RAW", ByteArrayUtil.toHex(cred.rawId.toByteArray()))
             intent.putExtra("ATTESTATION", ByteArrayUtil.encodeBase64URL(cred.response.attestationObject))
             intent.putExtra("CLIENT_JSON", cred.response.clientDataJSON)
             startActivity(intent)
@@ -286,7 +287,7 @@ class RegistrationActivity : AppCompatActivity() {
         )
 
         return WebAuthnClient(
-            origin        = "https://example.org/",
+            origin        = "https://example.org",
             authenticator = authenticator
         )
 
