@@ -95,10 +95,13 @@ class InternalMakeCredentialSession(
                 return@launch
             }
 
+            WAKLogger.d(TAG, "makeCredential - createNewCredentialId")
             val credentialId = createNewCredentialId()
 
             val rpId       = rpEntity.id!!
             val userHandle = userEntity.id!!.toByteArray()
+
+            WAKLogger.d(TAG, "makeCredential - create new credential source")
 
             val source = PublicKeyCredentialSource(
                 signCount  = 0,
@@ -114,6 +117,8 @@ class InternalMakeCredentialSession(
                 userHandle = userHandle
             )
 
+            WAKLogger.d(TAG, "makeCredential - create new key pair")
+
             val pubKey = keySupport.createKeyPair(
                 alias          = source.keyLabel,
                 clientDataHash = hash.toByteArray()
@@ -124,10 +129,14 @@ class InternalMakeCredentialSession(
                 return@launch
             }
 
+            WAKLogger.d(TAG, "makeCredential - save credential source")
+
             if (!credentialStore.saveCredentialSource(source)) {
                 stop(ErrorReason.Unknown)
                 return@launch
             }
+
+            WAKLogger.d(TAG, "makeCredential - create attested credential data")
 
             val attestedCredentialData = AttestedCredentialData(
                 aaguid              = ByteArrayUtil.zeroUUIDBytes().toUByteArray(),
@@ -139,6 +148,8 @@ class InternalMakeCredentialSession(
 
             val rpIdHash = ByteArrayUtil.sha256(rpId)
 
+            WAKLogger.d(TAG, "makeCredential - create authenticator data")
+
             val authenticatorData = AuthenticatorData(
                 rpIdHash               = rpIdHash.toUByteArray(),
                 userPresent            = requireUserPresence,
@@ -147,6 +158,8 @@ class InternalMakeCredentialSession(
                 attestedCredentialData = attestedCredentialData,
                 extensions             = extensions
             )
+
+            WAKLogger.d(TAG, "makeCredential - create attestation object")
 
             val attestation = keySupport.buildAttestationObject(
                 alias             = source.keyLabel,

@@ -2,6 +2,7 @@ package webauthnkit.core.authenticator
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.dataformat.cbor.CBORFactory
+import webauthnkit.core.util.ByteArrayUtil
 import webauthnkit.core.util.WAKLogger
 
 @ExperimentalUnsignedTypes
@@ -56,6 +57,8 @@ class AttestationObject(
             map["authData"] = authDataBytes.toByteArray()
             map["fmt"]      = this.fmt
             map["attStmt"]  = this.attStmt
+
+            WAKLogger.d(TAG, "AUTH_DATA: " + ByteArrayUtil.toHex(authDataBytes.toByteArray()))
 
             ObjectMapper(CBORFactory())
                 .writeValueAsBytes(map)

@@ -64,6 +64,7 @@ class COSEKeyEC2(
     }
 
     override fun toBytes(): UByteArray? {
+        WAKLogger.w(TAG, "COSE:EC2:toBytes")
 
         try {
             val map = LinkedHashMap<Int, Any>()
@@ -99,6 +100,7 @@ class COSEKeyRSA(
     }
 
     override fun toBytes(): UByteArray? {
+        WAKLogger.w(TAG, "COSE:RSA:toBytes")
 
         try {
             val map = LinkedHashMap<Int, Any>()
@@ -137,6 +139,7 @@ class AttestedCredentialData(
             WAKLogger.w(TAG, "failed to build COSE key")
             return null
         }
+        WAKLogger.d(TAG, "PubKey: length - ${pubKeyBytes.size}")
         val credentialIdLength: UInt = credentialId.size.toUInt()
         val size1 = (credentialIdLength and 0x0000_ff00u).shr(8).toUByte()
         val size2 = (credentialIdLength and 0x0000_00ffu).toUByte()

@@ -119,10 +119,16 @@ class ECDSAKeySupport(
 
             generator.initialize(createGenParameterSpec(alias, clientDataHash))
 
-            val pubKey = generator.generateKeyPair().public
-            val point = (pubKey as ECPublicKey).w
-            point.affineX.toByteArray()
-            point.affineY.toByteArray()
+            val pubKey = generator.generateKeyPair().public as ECPublicKey
+            val point = pubKey.w
+
+            WAKLogger.d(TAG, "ECPoint:" + pubKey.toString())
+            WAKLogger.d(TAG, "ECPoint:X:SIZE:${point.affineX.toByteArray().size}")
+            WAKLogger.d(TAG, "ECPoint:Y:SIZE:${point.affineY.toByteArray().size}")
+            WAKLogger.d(TAG, "ECPoint:X:SIZE:${point.affineX.toString().length}")
+            WAKLogger.d(TAG, "ECPoint:Y:SIZE:${point.affineY.toString().length}")
+            WAKLogger.d(TAG, "ECPoint:X:" + point.affineX.toString())
+            WAKLogger.d(TAG, "ECPoint:Y:" + point.affineY.toString())
 
             return COSEKeyEC2(
                 alg = alg,
