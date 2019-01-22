@@ -176,19 +176,9 @@ class CBORReader(val bytes: UByteArray) {
         val b1 = readByte() ?: return false
 
         return when (b1) {
-
-            CBORBits.falseBits -> {
-                false
-            }
-
-            CBORBits.trueBits -> {
-                true
-            }
-
-            else -> {
-                null
-            }
-
+            CBORBits.falseBits -> false
+            CBORBits.trueBits  -> true
+            else               -> null
         }
     }
 
@@ -355,27 +345,11 @@ class CBORReader(val bytes: UByteArray) {
         val isNegative = (b1 and CBORBits.headerPart) == CBORBits.negativeHeader
 
         val bytesToRead = when (value) {
-
-            in 0..23 -> {
-                0
-            }
-
-            24 -> {
-                1
-            }
-
-            25 -> {
-                2
-            }
-
-            26 -> {
-                4
-            }
-
-            27 -> {
-                8
-            }
-
+            in 0..23 -> 0
+            24 -> 1
+            25 -> 2
+            26 -> 4
+            27 -> 8
             else -> {
                 WAKLogger.d(TAG, "Invalid 'number' format")
                 return null
@@ -394,18 +368,10 @@ class CBORReader(val bytes: UByteArray) {
         val b2 = this.readBytes(bytesToRead) ?: return null
 
         val result = when (bytesToRead) {
-            1 -> {
-                b2[0].toLong()
-            }
-            2 -> {
-                ByteBuffer.wrap(b2.toByteArray()).short.toLong()
-            }
-            4 -> {
-                ByteBuffer.wrap(b2.toByteArray()).int.toLong()
-            }
-            8 -> {
-                ByteBuffer.wrap(b2.toByteArray()).long
-            }
+            1 -> b2[0].toLong()
+            2 -> ByteBuffer.wrap(b2.toByteArray()).short.toLong()
+            4 -> ByteBuffer.wrap(b2.toByteArray()).int.toLong()
+            8 -> ByteBuffer.wrap(b2.toByteArray()).long
             else -> {
                 WAKLogger.d(TAG, "Invalid 'number' format")
                 return null
@@ -484,7 +450,7 @@ class CBORWriter() {
     }
 
     private fun composeNegative(value: Long): List<Byte> {
-        
+
 
     }
 
