@@ -18,6 +18,8 @@ import java.security.spec.ECGenParameterSpec
 import java.util.*
 import javax.security.auth.x500.X500Principal
 import android.security.keystore.KeyInfo
+import webauthnkit.core.InvalidStateException
+import java.security.interfaces.ECPrivateKey
 import javax.crypto.SecretKeyFactory
 import javax.crypto.SecretKey
 
@@ -120,21 +122,20 @@ class ECDSAKeySupport(
             generator.initialize(createGenParameterSpec(alias, clientDataHash))
 
             val pubKey = generator.generateKeyPair().public as ECPublicKey
-            val point = pubKey.w
 
-            WAKLogger.d(TAG, "ECPoint:" + pubKey.toString())
-            WAKLogger.d(TAG, "ECPoint:X:SIZE:${point.affineX.toByteArray().size}")
-            WAKLogger.d(TAG, "ECPoint:Y:SIZE:${point.affineY.toByteArray().size}")
-            WAKLogger.d(TAG, "ECPoint:X:SIZE:${point.affineX.toString().length}")
-            WAKLogger.d(TAG, "ECPoint:Y:SIZE:${point.affineY.toString().length}")
-            WAKLogger.d(TAG, "ECPoint:X:" + point.affineX.toString())
-            WAKLogger.d(TAG, "ECPoint:Y:" + point.affineY.toString())
+            val encoded = pubKey.encoded
+            if (encoded.size != 91) {
+                throw InvalidStateException("length of ECPublicKey should be 91")
+            }
+
+            val x = Arrays.copyOfRange(encoded, 27, 59)
+            val y = Arrays.copyOfRange(encoded, 59, 91)
 
             return COSEKeyEC2(
                 alg = alg,
                 crv = COSEKeyCurveType.p256,
-                x   = point.affineX.toByteArray().toUByteArray(),
-                y   = point.affineY.toByteArray().toUByteArray()
+                x   = x.toUByteArray(),
+                y   = y.toUByteArray()
 
             )
         } catch (e: Exception) {

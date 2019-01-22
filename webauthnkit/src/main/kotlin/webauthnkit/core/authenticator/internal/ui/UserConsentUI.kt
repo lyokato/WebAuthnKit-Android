@@ -11,6 +11,7 @@ import webauthnkit.core.authenticator.internal.PublicKeyCredentialSource
 import kotlin.coroutines.resume
 import kotlin.coroutines.suspendCoroutine
 
+@ExperimentalUnsignedTypes
 @ExperimentalCoroutinesApi
 class UserConsentUI(
     val activity: Activity

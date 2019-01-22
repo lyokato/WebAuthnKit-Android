@@ -75,6 +75,13 @@ class COSEKeyEC2(
             map[COSEKeyFieldType.xCoord] = this.x
             map[COSEKeyFieldType.yCoord] = this.y
 
+            WAKLogger.d(TAG, ByteArrayUtil.toHex(this.x.toByteArray()))
+            WAKLogger.d(TAG, ByteArrayUtil.toHex(this.y.toByteArray()))
+
+           val obj= ObjectMapper(CBORFactory())
+                .writeValueAsBytes(map)
+            WAKLogger.d(TAG, ByteArrayUtil.toHex(obj))
+
             return ObjectMapper(CBORFactory())
                 .writeValueAsBytes(map)
                 .toUByteArray()
