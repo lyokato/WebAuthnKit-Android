@@ -19,9 +19,6 @@ import java.util.*
 import javax.security.auth.x500.X500Principal
 import android.security.keystore.KeyInfo
 import webauthnkit.core.InvalidStateException
-import java.security.interfaces.ECPrivateKey
-import javax.crypto.SecretKeyFactory
-import javax.crypto.SecretKey
 
 object KeyStoreType {
     const val Android = "AndroidKeyStore"

@@ -1,7 +1,6 @@
 package webauthnkit.core.authenticator.internal
 
 import android.util.Base64
-import com.fasterxml.jackson.databind.ObjectMapper
 import webauthnkit.core.util.WAKLogger
 import webauthnkit.core.util.ByteArrayUtil
 import webauthnkit.core.util.CBORReader

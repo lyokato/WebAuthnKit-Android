@@ -163,7 +163,6 @@ class CreateOperation(
 
             completed()
 
-            // XXX should be called on UI thread?
             continuation?.resume(cred)
             continuation = null
 
