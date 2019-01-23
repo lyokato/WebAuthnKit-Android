@@ -218,6 +218,8 @@ class AuthenticatorData(
 
     fun toBytes(): UByteArray? {
 
+        assert(userPresent != userVerified)
+
         val flags: UByte = AuthenticatorDataFlags(
             userPresent               = userPresent,
             userVerified              = userVerified,
@@ -227,8 +229,8 @@ class AuthenticatorData(
 
         val sc1: UByte = (signCount and 0xff00_0000u).shr(24).toUByte()
         val sc2: UByte = (signCount and 0x00ff_0000u).shr(16).toUByte()
-        val sc3: UByte = (signCount and 0x00ff_0000u).shr(16).toUByte()
-        val sc4: UByte = (signCount and 0x00ff_0000u).shr(16).toUByte()
+        val sc3: UByte = (signCount and 0x0000_ff00u).shr(8).toUByte()
+        val sc4: UByte = (signCount and 0x0000_00ffu).toUByte()
 
         var result = ByteArrayUtil.merge(rpIdHash,
             ubyteArrayOf(flags, sc1, sc2, sc3, sc4))

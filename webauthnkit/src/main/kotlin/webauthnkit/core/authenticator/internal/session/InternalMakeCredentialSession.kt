@@ -46,8 +46,8 @@ class InternalMakeCredentialSession(
 
     override fun makeCredential(
         hash:                            UByteArray,
-        rpEntity: PublicKeyCredentialRpEntity,
-        userEntity: PublicKeyCredentialUserEntity,
+        rpEntity:                        PublicKeyCredentialRpEntity,
+        userEntity:                      PublicKeyCredentialUserEntity,
         requireResidentKey:              Boolean,
         requireUserPresence:             Boolean,
         requireUserVerification:         Boolean,
@@ -152,7 +152,7 @@ class InternalMakeCredentialSession(
 
             val authenticatorData = AuthenticatorData(
                 rpIdHash               = rpIdHash.toUByteArray(),
-                userPresent            = requireUserPresence,
+                userPresent            = (requireUserPresence || requireUserVerification),
                 userVerified           = requireUserVerification,
                 signCount              = 0.toUInt(),
                 attestedCredentialData = attestedCredentialData,

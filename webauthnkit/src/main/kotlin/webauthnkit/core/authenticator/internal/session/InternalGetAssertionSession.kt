@@ -92,7 +92,7 @@ class InternalGetAssertionSession(
 
             val authenticatorData = AuthenticatorData(
                 rpIdHash               = rpIdHash.toUByteArray(),
-                userPresent            = requireUserPresence,
+                userPresent            = (requireUserPresence || requireUserVerification),
                 userVerified           = requireUserVerification,
                 signCount              = cred.signCount.toUInt(),
                 attestedCredentialData = null,

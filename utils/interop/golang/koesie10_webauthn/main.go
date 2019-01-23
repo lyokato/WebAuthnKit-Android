@@ -19,7 +19,7 @@ func main() {
 		return
 	}
 
-	b64Id := "lgaX28HSS8irESj32373fQ"
+	b64Id := "1iBgFW1tSMSO_4mre7JJeQ"
 	rawId, err := base64.RawURLEncoding.DecodeString(b64Id)
 	if err != nil {
 		fmt.Printf("ID Format Error: %v", err)
@@ -32,7 +32,7 @@ func main() {
 		return
 	}
 
-	attsObj, err := base64.RawURLEncoding.DecodeString("v2hhdXRoRGF0YVjfUNepBeMEa4hjg2LMNKMaGuU0dmylXjqjl5Ue_mU7BitEAAAAAAAAAAAAAAAAAAAAAAAAAAAAEJYGl9vB0kvIqxEo99t")
+	attsObj, err := base64.RawURLEncoding.DecodeString("o2hhdXRoRGF0YVkAlFDXqQXjBGuIY4NizDSjGhrlNHZspV46o5eVHv5lOwYrRAAAAAAAAAAAAAAAAAAAAAAAAAAAABDWIGAVbW1IxI7_iat7skl5pQECAyYgASFYIIWPShqhQ_g1b_ZhzAWWN5UWh8gHOwbNWtdui9M2xf-jIlggLzvDxIPB69pTsHL0u7YNApNdcMaQd3uDiz6Y-0ENYLtjZm10ZnBhY2tlZGdhdHRTdG10omNzaWdYRzBFAiEA0zMrn6VENt3UNZ7TbRR06SgJmMIaVm3EOYq6SbTcWRYCID6zT1AsTTKzYhfYSiqq-a3guNvRiaitDthkxRNAthAXY2FsZyY")
 	if err != nil {
 		fmt.Printf("Attestation Format Error: %v", err)
 		return
@@ -82,7 +82,7 @@ func main() {
 		return
 	}
 
-	/* This returns err, because this webauthn library doesn't support self-attestation
+//	 This returns err, because this webauthn library doesn't support self-attestation
 	validAtts, err := protocol.IsValidAttestation(atts, assertionChallenge, rpId, rpOrigin)
 	if err != nil {
 		e := protocol.ToWebAuthnError(err)
@@ -93,7 +93,6 @@ func main() {
 		fmt.Println("Invalid Attestation!")
 		return
 	}
-	*/
 
 	return
 
