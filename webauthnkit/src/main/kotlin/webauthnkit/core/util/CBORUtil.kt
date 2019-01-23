@@ -1,7 +1,10 @@
 package webauthnkit.core.util
 
+import kotlinx.io.ByteArrayOutputStream
+import kotlinx.serialization.toUtf8Bytes
 import java.nio.ByteBuffer
 import java.util.*
+import kotlin.experimental.or
 
 // TODO better performance
 
@@ -57,10 +60,10 @@ object CBORBits {
 
 
 @ExperimentalUnsignedTypes
-class CBORReader(val bytes: UByteArray) {
+class CBORReader(private val bytes: UByteArray) {
 
-    val size = bytes.size
-    var cursor = 0
+    private val size = bytes.size
+    private var cursor = 0
 
     companion object {
         private val TAG = this::class.simpleName
@@ -74,7 +77,7 @@ class CBORReader(val bytes: UByteArray) {
         return (size - cursor)
     }
 
-    fun nextByte(): UByte? {
+    private fun nextByte(): UByte? {
         return if (this.cursor < this.size) {
             this.bytes[this.cursor]
         } else {
@@ -83,7 +86,7 @@ class CBORReader(val bytes: UByteArray) {
         }
     }
 
-    fun replaceNextByte(value: UByte) {
+    private fun replaceNextByte(value: UByte) {
         this.bytes[this.cursor] = value
     }
 
@@ -119,13 +122,29 @@ class CBORReader(val bytes: UByteArray) {
     }
 
     fun readFloat(): Float? {
-        val b1 = this.readBytes(4) ?: return null
-        return ByteBuffer.wrap(b1.toByteArray()).float
+
+        val b1 = this.readByte() ?: return null
+
+        if (b1 != CBORBits.floatBits) {
+            WAKLogger.d(TAG, "Invalid 'float' format")
+            return null
+        }
+
+        val b2 = this.readBytes(4) ?: return null
+        return ByteBuffer.wrap(b2.toByteArray()).float
     }
 
     fun readDouble(): Double? {
-        val b1 = this.readBytes(8) ?: return null
-        return ByteBuffer.wrap(b1.toByteArray()).double
+
+        val b1 = this.readByte() ?: return null
+
+        if (b1 != CBORBits.doubleBits) {
+            WAKLogger.d(TAG, "Invalid 'double' format")
+            return null
+        }
+
+        val b2 = this.readBytes(8) ?: return null
+        return ByteBuffer.wrap(b2.toByteArray()).double
     }
 
     fun readByteString(): UByteArray? {
@@ -139,12 +158,12 @@ class CBORReader(val bytes: UByteArray) {
 
         this.replaceNextByte(b1 and CBORBits.valuePart)
 
-        val len = this.readNumber() ?: return null
-        if (len == 0L) {
+        val len = this.readNumber()?.toInt() ?: return null
+        if (len == 0) {
            return ubyteArrayOf()
         }
 
-        return this.readBytes(len.toInt())
+        return this.readBytes(len)
     }
 
     fun readString(): String? {
@@ -158,12 +177,12 @@ class CBORReader(val bytes: UByteArray) {
 
         this.replaceNextByte(b1 and CBORBits.valuePart)
 
-        val len = this.readNumber() ?: return null
-        if (len == 0L) {
+        val len = this.readNumber()?.toInt() ?: return null
+        if (len == 0) {
             return ""
         }
 
-        val b2 = this.readBytes(len.toInt()) ?: return null
+        val b2 = this.readBytes(len) ?: return null
 
         return String(
             bytes   = b2.toByteArray(),
@@ -250,7 +269,7 @@ class CBORReader(val bytes: UByteArray) {
 
     }
 
-    fun readIntKeyMap(): Map<Long, Any>? {
+    fun readIntKeyMap(): Map<Int, Any>? {
 
         val b1 = nextByte() ?: return null
 
@@ -263,7 +282,7 @@ class CBORReader(val bytes: UByteArray) {
 
         val count = this.readNumber()?.toInt() ?: return null
 
-        var results = mutableMapOf<Long, Any>()
+        var results = mutableMapOf<Int, Any>()
 
         if (count == 0) {
             return results
@@ -271,7 +290,7 @@ class CBORReader(val bytes: UByteArray) {
 
         val max = count - 1
         for (i in 0..max) {
-            val key = this.readNumber() ?: return null
+            val key = this.readNumber()?.toInt() ?: return null
             val result = this.readAny() ?: return null
             results[key] = result
         }
@@ -390,73 +409,210 @@ class CBORReader(val bytes: UByteArray) {
 @ExperimentalUnsignedTypes
 class CBORWriter() {
 
-    private var result = mutableListOf<Byte>()
+    private var result = ByteArrayOutputStream()
 
-    fun putArray(values: List<Any>): CBORWriter {
+    fun putArray(values: List<*>): CBORWriter {
+        var bytes = this.composePositive(values.count().toLong())
+        bytes[0] = bytes[0] or CBORBits.arrayHeader.toByte()
+        this.result.write(bytes)
+        values.forEach {
+            when (it) {
+                is Long -> {
+                    this.putNumber(it)
+                }
+                is String -> {
+                    this.putString(it)
+                }
+                is ByteArray -> {
+                    this.putByteString(it)
+                }
+                is Float -> {
+                    this.putFloat(it)
+                }
+                is Double -> {
+                    this.putDouble(it)
+                }
+                is Boolean -> {
+                    this.putBool(it)
+                }
+                else -> {
+                    throw AssertionError("unsupported value type")
+                }
+            }
+        }
         return this
     }
 
     fun putStringKeyMap(values: Map<String, Any>): CBORWriter {
+        var bytes = this.composePositive(values.count().toLong())
+        bytes[0] = bytes[0] or CBORBits.mapHeader.toByte()
+        this.result.write(bytes)
+        values.forEach {
+            this.putString(it.key)
+            val value = it.value
+            when (value) {
+                is Long -> {
+                    this.putNumber(value)
+                }
+                is String -> {
+                    this.putString(value)
+                }
+                is ByteArray -> {
+                    this.putByteString(value)
+                }
+                is Float -> {
+                    this.putFloat(value)
+                }
+                is Double -> {
+                    this.putDouble(value)
+                }
+                is Boolean -> {
+                    this.putBool(value)
+                }
+                is Map<*, *> -> {
+                    // TODO check type
+                    this.putStringKeyMap(value as Map<String, Any>)
+                }
+                is List<*> -> {
+                    this.putArray(value)
+                }
+                else -> {
+                    throw AssertionError("unsupported value type")
+                }
+            }
+        }
         return this
     }
 
-    fun putIntKeyMap(values: Map<Long, Any>): CBORWriter {
+    // for COSE Key
+    fun putIntKeyMap(values: Map<Int, Any>): CBORWriter {
+        var bytes = this.composePositive(values.count().toLong())
+        bytes[0] = bytes[0] or CBORBits.mapHeader.toByte()
+        this.result.write(bytes)
+        values.forEach {
+            this.putNumber(it.key.toLong())
+            val value = it.value
+            when (value) {
+                is Long -> {
+                    this.putNumber(value)
+                }
+                is String -> {
+                    this.putString(value)
+                }
+                is ByteArray -> {
+                    this.putByteString(value)
+                }
+                is Float -> {
+                    this.putFloat(value)
+                }
+                is Double -> {
+                    this.putDouble(value)
+                }
+                is Boolean -> {
+                    this.putBool(value)
+                }
+                else -> {
+                    throw AssertionError("unsupported value type")
+                }
+            }
+        }
         return this
     }
 
     fun startArray(): CBORWriter {
-        this.result.add(CBORBits.indefiniteArrayBits.toByte())
+        this.result.write(CBORBits.indefiniteArrayBits.toInt())
         return this
     }
 
     fun startMap(): CBORWriter {
-        this.result.add(CBORBits.indefiniteMapBits.toByte())
+        this.result.write(CBORBits.indefiniteMapBits.toInt())
         return this
     }
 
     fun end(): CBORWriter {
-        this.result.add(CBORBits.breakBits.toByte())
+        this.result.write(CBORBits.breakBits.toInt())
+        return this
+    }
+
+    fun putNumber(value: Long): CBORWriter {
+        this.result.write(this.composeNumber(value))
         return this
     }
 
     fun putString(value: String): CBORWriter {
+        val data = value.toUtf8Bytes()
+        val header = composeNumber(data.size.toLong())
+        header[0] = header[0] or CBORBits.stringHeader.toByte()
+        this.result.write(header)
+        this.result.write(data)
         return this
     }
 
     fun putByteString(value: ByteArray): CBORWriter {
+        val header = composeNumber(value.size.toLong())
+        header[0] = header[0] or CBORBits.bytesHeader.toByte()
+        this.result.write(header)
+        this.result.write(value)
         return this
     }
 
     fun putFloat(value: Float): CBORWriter {
+        val data = ByteBuffer.allocate(5)
+            .put(CBORBits.floatBits.toByte())
+            .putFloat(value)
+            .array()
+        this.result.write(data)
         return this
     }
 
     fun putDouble(value: Double): CBORWriter {
+        val data = ByteBuffer.allocate(9)
+            .put(CBORBits.doubleBits.toByte())
+            .putDouble(value)
+            .array()
+        this.result.write(data)
         return this
     }
 
     fun putNull(): CBORWriter {
-        this.result.add(CBORBits.nullBits.toByte())
+        this.result.write(CBORBits.nullBits.toInt())
         return this
     }
 
     fun putBool(value: Boolean): CBORWriter {
         if (value) {
-            this.result.add(CBORBits.trueBits.toByte())
+            this.result.write(CBORBits.trueBits.toInt())
         } else {
-            this.result.add(CBORBits.falseBits.toByte())
+            this.result.write(CBORBits.falseBits.toInt())
         }
         return this
     }
 
-    private fun composeNegative(value: Long): List<Byte> {
+    private fun composeNumber(value: Long): ByteArray =
+        if (value >= 0) composePositive(value) else composeNegative(value)
 
-
+    private fun composeNegative(value: Long): ByteArray {
+        val aVal = if (value == Long.MIN_VALUE) Long.MAX_VALUE else -1 - value
+        val data = composePositive(aVal)
+        data[0] = data[0] or CBORBits.negativeHeader.toByte()
+        return data
     }
 
-    private fun composePositive(value: Long): List<Byte> {
-
-    }
+    private fun composePositive(value: Long): ByteArray =
+        when (value) {
+            in 0..23 -> byteArrayOf(value.toByte())
+            in 24..Byte.MAX_VALUE -> byteArrayOf(24, value.toByte())
+            in Byte.MAX_VALUE + 1..Short.MAX_VALUE -> {
+                ByteBuffer.allocate(3).put(25.toByte()).putShort(value.toShort()).array()
+            }
+            in Short.MAX_VALUE + 1..Int.MAX_VALUE -> {
+                ByteBuffer.allocate(5).put(26.toByte()).putInt(value.toInt()).array()
+            }
+            in (Int.MAX_VALUE.toLong() + 1..Long.MAX_VALUE) -> {
+                ByteBuffer.allocate(9).put(27.toByte()).putLong(value).array()
+            }
+            else -> throw AssertionError("should be positive")
+        }
 
     fun compute(): ByteArray {
         return result.toByteArray()

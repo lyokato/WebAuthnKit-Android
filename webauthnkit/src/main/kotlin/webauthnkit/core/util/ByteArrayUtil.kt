@@ -68,18 +68,17 @@ object ByteArrayUtil {
     }
 
     fun fromHex(str: String): ByteArray {
-        return HexConverter.parseHexBinary(str)
+        //return HexConverter.parseHexBinary(str)
+        return ByteArray(str.length / 2) { str.substring(it * 2, it * 2 + 2).toInt(16).toByte() }
     }
 
     fun toHex(bytes: ByteArray): String {
-        return HexConverter.printHexBinary(bytes, lowerCase = true)
-        /*
+        //return HexConverter.printHexBinary(bytes, lowerCase = true)
         return buildString {
             for (b in bytes) {
-                append(String.format("%02X", b))
+                append(String.format("%02x", b))
             }
         }
-        */
     }
 
 
