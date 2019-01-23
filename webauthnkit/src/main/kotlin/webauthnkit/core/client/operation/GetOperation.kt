@@ -27,7 +27,7 @@ class GetOperation(
     private val session:        GetAssertionSession,
     private val clientData:     CollectedClientData,
     private val clientDataJSON: String,
-    private val clientDataHash: UByteArray,
+    private val clientDataHash: ByteArray,
     private val lifetimeTimer:  Long
 ) {
 
@@ -36,7 +36,7 @@ class GetOperation(
     }
 
     private var stopped: Boolean = false
-    private var savedCredentialId: UByteArray? = null
+    private var savedCredentialId: ByteArray? = null
 
     private val sessionListener = object : GetAssertionSessionListener {
 

@@ -97,7 +97,7 @@ interface KeySupport {
     fun sign(alias: String, data: ByteArray): ByteArray?
     fun buildAttestationObject(
         alias:             String,
-        clientDataHash:    UByteArray,
+        clientDataHash:    ByteArray,
         authenticatorData: AuthenticatorData
     ): AttestationObject?
 }
@@ -134,8 +134,8 @@ class ECDSAKeySupport(
             return COSEKeyEC2(
                 alg = alg,
                 crv = COSEKeyCurveType.p256,
-                x   = x.toUByteArray(),
-                y   = y.toUByteArray()
+                x   = x,
+                y   = y
 
             )
         } catch (e: Exception) {
@@ -201,7 +201,7 @@ class ECDSAKeySupport(
 
     override fun buildAttestationObject(
         alias:             String,
-        clientDataHash:    UByteArray,
+        clientDataHash:    ByteArray,
         authenticatorData: AuthenticatorData
     ): AttestationObject? {
 
@@ -214,7 +214,7 @@ class ECDSAKeySupport(
         val bytesToBeSigned =
             ByteArrayUtil.merge(authenticatorDataBytes, clientDataHash)
 
-        val sig = this.sign(alias, bytesToBeSigned.toByteArray())
+        val sig = this.sign(alias, bytesToBeSigned)
         if (sig == null) {
             WAKLogger.d(TAG, "failed to sign authenticator data")
             return null
@@ -281,8 +281,8 @@ class LegacyRSAKeySupport(
                     KeyStoreType.Android)
             generator.initialize(this.createKeyPairSpec(alias))
             val pubKey = generator.generateKeyPair().public
-            val n = (pubKey as RSAPublicKey).modulus.toByteArray().toUByteArray()
-            val e = pubKey.publicExponent.toByteArray().toUByteArray()
+            val n = (pubKey as RSAPublicKey).modulus.toByteArray()
+            val e = pubKey.publicExponent.toByteArray()
 
             return COSEKeyRSA(
                 alg = alg,
@@ -324,7 +324,7 @@ class LegacyRSAKeySupport(
 
     override fun buildAttestationObject(
         alias:             String,
-        clientDataHash:    UByteArray,
+        clientDataHash:    ByteArray,
         authenticatorData: AuthenticatorData
     ): AttestationObject? {
 
@@ -337,7 +337,7 @@ class LegacyRSAKeySupport(
         val bytesToBeSigned =
             ByteArrayUtil.merge(authenticatorDataBytes, clientDataHash)
 
-        val sig = this.sign(alias, bytesToBeSigned.toByteArray())
+        val sig = this.sign(alias, bytesToBeSigned)
         if (sig == null) {
             WAKLogger.d(TAG, "failed to sign authenticator data")
             return null

@@ -9,7 +9,7 @@ import webauthnkit.core.util.CBORWriter
 
 @ExperimentalUnsignedTypes
 class PublicKeyCredentialSource(
-    var signCount:  Int,
+    var signCount:  UInt,
     val id:         ByteArray,
     val rpId:       String,
     val userHandle: ByteArray,
@@ -37,13 +37,13 @@ class PublicKeyCredentialSource(
             WAKLogger.d(TAG, "fromCBOR")
             return try {
 
-                val map = CBORReader(bytes.toUByteArray()).readStringKeyMap()!!
+                val map = CBORReader(bytes).readStringKeyMap()!!
 
                 if (!map.containsKey("signCount")) {
                     WAKLogger.w(TAG, "'signCount' key not found")
                     return null
                 }
-                val signCount = (map["signCount"] as Long).toInt()
+                val signCount = (map["signCount"] as Long).toUInt()
 
                 if (!map.containsKey("alg")) {
                     WAKLogger.w(TAG, "'alg' key not found")
@@ -113,7 +113,7 @@ class PublicKeyCredentialSource(
         }
     }
 
-    fun toCBOR(): UByteArray? {
+    fun toCBOR(): ByteArray? {
         return try {
 
             val map = LinkedHashMap<String, Any>()
@@ -124,7 +124,7 @@ class PublicKeyCredentialSource(
             map["signCount"]  = this.signCount.toLong()
             map["otherUI"]    = this.otherUI
 
-            return CBORWriter().putStringKeyMap(map).compute().toUByteArray()
+            return CBORWriter().putStringKeyMap(map).compute()
 
         } catch (e: Exception) {
             WAKLogger.w(TAG, "failed to encode CBOR: " + e.localizedMessage)

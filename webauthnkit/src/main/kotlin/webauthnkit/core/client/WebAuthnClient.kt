@@ -100,7 +100,7 @@ class WebAuthnClient(
     private fun generateClientData(
         type: CollectedClientDataType,
         challenge: String
-    ): Triple<CollectedClientData, String, UByteArray> {
+    ): Triple<CollectedClientData, String, ByteArray> {
 
         WAKLogger.d(TAG, "generateClientData")
 
@@ -111,7 +111,7 @@ class WebAuthnClient(
         )
 
         val json = encodeJSON(data)
-        val hash = ByteArrayUtil.sha256(json).toUByteArray()
+        val hash = ByteArrayUtil.sha256(json)
 
         return Triple(data, json, hash)
     }

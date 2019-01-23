@@ -37,13 +37,13 @@ class AttestationObject(
         if (this.authData.attestedCredentialData != null) {
            return false
         }
-        if (this.authData.attestedCredentialData!!.aaguid.any { it != 0x00.toUByte() }) {
+        if (this.authData.attestedCredentialData!!.aaguid.any { it != 0x00.toByte() }) {
             return false
         }
         return true
     }
 
-    fun toBytes(): UByteArray? {
+    fun toBytes(): ByteArray? {
         WAKLogger.d(TAG, "toBytes")
 
         return try {
@@ -53,13 +53,13 @@ class AttestationObject(
                 return null
             }
             val map = LinkedHashMap<String, Any>()
-            map["authData"] = authDataBytes.toByteArray()
+            map["authData"] = authDataBytes
             map["fmt"]      = this.fmt
             map["attStmt"]  = this.attStmt
 
-            WAKLogger.d(TAG, "AUTH_DATA: " + ByteArrayUtil.toHex(authDataBytes.toByteArray()))
+            WAKLogger.d(TAG, "AUTH_DATA: " + ByteArrayUtil.toHex(authDataBytes))
 
-            return CBORWriter().putStringKeyMap(map).compute().toUByteArray()
+            return CBORWriter().putStringKeyMap(map).compute()
 
         } catch (e: Exception) {
             WAKLogger.d(TAG, "failed to build attestation binary: " + e.localizedMessage)

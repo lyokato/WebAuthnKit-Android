@@ -4,6 +4,7 @@ import kotlinx.io.ByteArrayOutputStream
 import kotlinx.serialization.toUtf8Bytes
 import java.nio.ByteBuffer
 import java.util.*
+import kotlin.experimental.and
 import kotlin.experimental.or
 
 // TODO better performance
@@ -11,56 +12,56 @@ import kotlin.experimental.or
 @ExperimentalUnsignedTypes
 object CBORBits {
 
-    val falseBits: UByte
-        get() = 0xf4.toUByte()
+    val falseBits: Byte
+        get() = 0xf4.toByte()
 
-    val trueBits: UByte
-        get() = 0xf5.toUByte()
+    val trueBits: Byte
+        get() = 0xf5.toByte()
 
-    val nullBits: UByte
-        get() = 0xf6.toUByte()
+    val nullBits: Byte
+        get() = 0xf6.toByte()
 
-    val headerPart: UByte
-        get() = 0b11100000.toUByte()
+    val headerPart: Byte
+        get() = 0b11100000.toByte()
 
-    val valuePart: UByte
-        get() = 0b00011111.toUByte()
+    val valuePart: Byte
+        get() = 0b00011111.toByte()
 
-    val stringHeader: UByte
-        get() = 0b01100000.toUByte()
+    val stringHeader: Byte
+        get() = 0b01100000.toByte()
 
-    val bytesHeader: UByte
-        get() = 0b01000000.toUByte()
+    val bytesHeader: Byte
+        get() = 0b01000000.toByte()
 
-    val negativeHeader: UByte
-        get() = 0b00100000.toUByte()
+    val negativeHeader: Byte
+        get() = 0b00100000.toByte()
 
-    val floatBits: UByte
-        get() = 0xfa.toUByte()
+    val floatBits: Byte
+        get() = 0xfa.toByte()
 
-    val doubleBits: UByte
-        get() = 0xfb.toUByte()
+    val doubleBits: Byte
+        get() = 0xfb.toByte()
 
-    val arrayHeader: UByte
-        get() = 0x80.toUByte()
+    val arrayHeader: Byte
+        get() = 0x80.toByte()
 
-    val mapHeader: UByte
-        get() = 0xa0.toUByte()
+    val mapHeader: Byte
+        get() = 0xa0.toByte()
 
-    val indefiniteArrayBits: UByte
-        get() = 0x9f.toUByte()
+    val indefiniteArrayBits: Byte
+        get() = 0x9f.toByte()
 
-    val indefiniteMapBits: UByte
-        get() = 0xbf.toUByte()
+    val indefiniteMapBits: Byte
+        get() = 0xbf.toByte()
 
-    val breakBits: UByte
-        get() = 0xff.toUByte()
+    val breakBits: Byte
+        get() = 0xff.toByte()
 
 }
 
 
 @ExperimentalUnsignedTypes
-class CBORReader(private val bytes: UByteArray) {
+class CBORReader(private val bytes: ByteArray) {
 
     private val size = bytes.size
     private var cursor = 0
@@ -77,7 +78,7 @@ class CBORReader(private val bytes: UByteArray) {
         return (size - cursor)
     }
 
-    private fun nextByte(): UByte? {
+    private fun nextByte(): Byte? {
         return if (this.cursor < this.size) {
             this.bytes[this.cursor]
         } else {
@@ -86,11 +87,11 @@ class CBORReader(private val bytes: UByteArray) {
         }
     }
 
-    private fun replaceNextByte(value: UByte) {
+    private fun replaceNextByte(value: Byte) {
         this.bytes[this.cursor] = value
     }
 
-    private fun readByte(): UByte? {
+    private fun readByte(): Byte? {
 
         return if (this.cursor < this.size) {
 
@@ -105,15 +106,15 @@ class CBORReader(private val bytes: UByteArray) {
         }
     }
 
-    private fun readBytes(size: Int): UByteArray? {
+    private fun readBytes(size: Int): ByteArray? {
 
         return if ((this.cursor + size - 1) < this.size) {
 
-            val b = Arrays.copyOfRange(this.bytes.toByteArray(),
+            val b = Arrays.copyOfRange(this.bytes,
                 this.cursor, this.cursor + size)
             this.cursor = this.cursor + size
 
-            return b.toUByteArray()
+            return b
 
         } else {
             WAKLogger.d(TAG, "no enough size")
@@ -131,7 +132,7 @@ class CBORReader(private val bytes: UByteArray) {
         }
 
         val b2 = this.readBytes(4) ?: return null
-        return ByteBuffer.wrap(b2.toByteArray()).float
+        return ByteBuffer.wrap(b2).float
     }
 
     fun readDouble(): Double? {
@@ -144,10 +145,10 @@ class CBORReader(private val bytes: UByteArray) {
         }
 
         val b2 = this.readBytes(8) ?: return null
-        return ByteBuffer.wrap(b2.toByteArray()).double
+        return ByteBuffer.wrap(b2).double
     }
 
-    fun readByteString(): UByteArray? {
+    fun readByteString(): ByteArray? {
 
         val b1 = this.nextByte() ?: return null
 
@@ -160,7 +161,7 @@ class CBORReader(private val bytes: UByteArray) {
 
         val len = this.readNumber()?.toInt() ?: return null
         if (len == 0) {
-           return ubyteArrayOf()
+           return byteArrayOf()
         }
 
         return this.readBytes(len)
@@ -185,7 +186,7 @@ class CBORReader(private val bytes: UByteArray) {
         val b2 = this.readBytes(len) ?: return null
 
         return String(
-            bytes   = b2.toByteArray(),
+            bytes   = b2,
             charset = Charsets.UTF_8
         )
     }
@@ -388,9 +389,9 @@ class CBORReader(private val bytes: UByteArray) {
 
         val result = when (bytesToRead) {
             1 -> b2[0].toLong()
-            2 -> ByteBuffer.wrap(b2.toByteArray()).short.toLong()
-            4 -> ByteBuffer.wrap(b2.toByteArray()).int.toLong()
-            8 -> ByteBuffer.wrap(b2.toByteArray()).long
+            2 -> ByteBuffer.wrap(b2).short.toLong()
+            4 -> ByteBuffer.wrap(b2).int.toLong()
+            8 -> ByteBuffer.wrap(b2).long
             else -> {
                 WAKLogger.d(TAG, "Invalid 'number' format")
                 return null

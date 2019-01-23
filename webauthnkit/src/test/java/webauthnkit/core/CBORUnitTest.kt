@@ -21,7 +21,7 @@ class CBORUnitTest {
         val computed = ByteArrayUtil.toHex(CBORWriter().putNumber(num).compute())
         assertEquals(hex, computed)
 
-        val reader = CBORReader(ByteArrayUtil.fromHex(hex).toUByteArray())
+        val reader = CBORReader(ByteArrayUtil.fromHex(hex))
         assertEquals(num, reader.readNumber())
     }
 
@@ -29,7 +29,7 @@ class CBORUnitTest {
         val computed = ByteArrayUtil.toHex(CBORWriter().putFloat(num).compute())
         assertEquals(hex, computed)
 
-        val reader = CBORReader(ByteArrayUtil.fromHex(hex).toUByteArray())
+        val reader = CBORReader(ByteArrayUtil.fromHex(hex))
         assertEquals(num, reader.readFloat())
     }
 
@@ -37,7 +37,7 @@ class CBORUnitTest {
         val computed = ByteArrayUtil.toHex(CBORWriter().putDouble(num).compute())
         assertEquals(hex, computed)
 
-        val reader = CBORReader(ByteArrayUtil.fromHex(hex).toUByteArray())
+        val reader = CBORReader(ByteArrayUtil.fromHex(hex))
         assertEquals(num, reader.readDouble())
     }
 
@@ -45,7 +45,7 @@ class CBORUnitTest {
         val computed = ByteArrayUtil.toHex(CBORWriter().putBool(value).compute())
         assertEquals(hex, computed)
 
-        val reader = CBORReader(ByteArrayUtil.fromHex(hex).toUByteArray())
+        val reader = CBORReader(ByteArrayUtil.fromHex(hex))
         assertEquals(value, reader.readBool())
     }
 
@@ -53,15 +53,15 @@ class CBORUnitTest {
         val computed = ByteArrayUtil.toHex(CBORWriter().putString(value).compute())
         assertEquals(hex, computed)
 
-        val reader = CBORReader(ByteArrayUtil.fromHex(hex).toUByteArray())
+        val reader = CBORReader(ByteArrayUtil.fromHex(hex))
         assertEquals(value, reader.readString())
     }
 
     private fun assertByteString(value: ByteArray, hex: String) {
         val computed = ByteArrayUtil.toHex(CBORWriter().putByteString(value).compute())
         assertEquals(hex, computed)
-        val reader = CBORReader(ByteArrayUtil.fromHex(hex).toUByteArray())
-        val result =  reader.readByteString()!!.toByteArray()
+        val reader = CBORReader(ByteArrayUtil.fromHex(hex))
+        val result =  reader.readByteString()!!
         assertNotNull(result)
         assertArrayEquals(value, result)
     }
@@ -133,13 +133,13 @@ class CBORUnitTest {
         val computed1 = ByteArrayUtil.toHex(CBORWriter().putArray(list).compute())
         assertEquals("80", computed1)
 
-        val result1 = CBORReader(ByteArrayUtil.fromHex(computed1).toUByteArray()).readArray()
+        val result1 = CBORReader(ByteArrayUtil.fromHex(computed1)).readArray()
         assertEquals(0, result1!!.count())
 
         val list2 = mutableListOf<Any>(1L, 2L, 3L)
         val computed2 = ByteArrayUtil.toHex(CBORWriter().putArray(list2).compute())
         assertEquals("83010203", computed2)
-        val result2 = CBORReader(ByteArrayUtil.fromHex(computed2).toUByteArray()).readArray()
+        val result2 = CBORReader(ByteArrayUtil.fromHex(computed2)).readArray()
         assertEquals(3, result2!!.count())
         assertEquals(1L, result2[0])
         assertEquals(2L, result2[1])
@@ -150,7 +150,7 @@ class CBORUnitTest {
             11L,12L,13L,14L,15L,16L,17L,18L,19L,20L,21L,22L,23L,24L,25L)
         val computed3 = ByteArrayUtil.toHex(CBORWriter().putArray(list3).compute())
         assertEquals("98190102030405060708090a0b0c0d0e0f101112131415161718181819", computed3)
-        val result3 = CBORReader(ByteArrayUtil.fromHex(computed3).toUByteArray()).readArray()
+        val result3 = CBORReader(ByteArrayUtil.fromHex(computed3)).readArray()
         assertEquals(25, result3!!.count())
         assertEquals(1L, result3[0])
         assertEquals(25L, result3[24])
@@ -161,7 +161,7 @@ class CBORUnitTest {
         val map1 = mutableMapOf<String, Any>()
         val computed = ByteArrayUtil.toHex(CBORWriter().putStringKeyMap(map1).compute())
         assertEquals("a0", computed)
-        val result1 = CBORReader(ByteArrayUtil.fromHex(computed).toUByteArray()).readStringKeyMap()
+        val result1 = CBORReader(ByteArrayUtil.fromHex(computed)).readStringKeyMap()
         assertEquals(0, result1!!.count())
 
         val map2 = mutableMapOf<String, Any>()
@@ -170,7 +170,7 @@ class CBORUnitTest {
         map2["b"] = array2
         val computed2 = ByteArrayUtil.toHex(CBORWriter().putStringKeyMap(map2).compute())
         assertEquals("a26161016162820203", computed2)
-        val result2 = CBORReader(ByteArrayUtil.fromHex(computed2).toUByteArray()).readStringKeyMap()
+        val result2 = CBORReader(ByteArrayUtil.fromHex(computed2)).readStringKeyMap()
         assertEquals(2, result2!!.count())
         assertEquals(1L, result2["a"])
 
@@ -179,7 +179,7 @@ class CBORUnitTest {
         map3[3] = 4L
         val computed3 = ByteArrayUtil.toHex(CBORWriter().putIntKeyMap(map3).compute())
         assertEquals("a0", computed)
-        val result3 = CBORReader(ByteArrayUtil.fromHex(computed3).toUByteArray()).readIntKeyMap()
+        val result3 = CBORReader(ByteArrayUtil.fromHex(computed3)).readIntKeyMap()
         assertEquals(2, result3!!.count())
         assertEquals(2L, result3[1])
         assertEquals(4L, result3[3])

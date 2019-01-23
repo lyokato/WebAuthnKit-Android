@@ -45,24 +45,23 @@ object COSEAlgorithmIdentifier {
     */
 }
 
-@ExperimentalUnsignedTypes
 interface COSEKey {
-    fun toBytes(): UByteArray?
+    fun toBytes(): ByteArray?
 }
 
 @ExperimentalUnsignedTypes
 class COSEKeyEC2(
     val alg: Int,
     val crv: Int,
-    val x: UByteArray,
-    val y: UByteArray
+    val x: ByteArray,
+    val y: ByteArray
 ): COSEKey {
 
     companion object {
         val TAG = this::class.simpleName
     }
 
-    override fun toBytes(): UByteArray? {
+    override fun toBytes(): ByteArray? {
         WAKLogger.w(TAG, "COSE:EC2:toBytes")
 
         try {
@@ -71,13 +70,13 @@ class COSEKeyEC2(
             map[COSEKeyFieldType.kty]    = COSEKeyType.ec2.toLong()
             map[COSEKeyFieldType.alg]    = this.alg.toLong()
             map[COSEKeyFieldType.crv]    = this.crv.toLong()
-            map[COSEKeyFieldType.xCoord] = this.x.toByteArray()
-            map[COSEKeyFieldType.yCoord] = this.y.toByteArray()
+            map[COSEKeyFieldType.xCoord] = this.x
+            map[COSEKeyFieldType.yCoord] = this.y
 
-            WAKLogger.d(TAG, ByteArrayUtil.toHex(this.x.toByteArray()))
-            WAKLogger.d(TAG, ByteArrayUtil.toHex(this.y.toByteArray()))
+            WAKLogger.d(TAG, ByteArrayUtil.toHex(this.x))
+            WAKLogger.d(TAG, ByteArrayUtil.toHex(this.y))
 
-            return CBORWriter().putIntKeyMap(map).compute().toUByteArray()
+            return CBORWriter().putIntKeyMap(map).compute()
 
         } catch (e:Exception) {
             WAKLogger.w(TAG, "failed to build CBOR")
@@ -91,15 +90,15 @@ class COSEKeyEC2(
 @ExperimentalUnsignedTypes
 class COSEKeyRSA(
     val alg: Int,
-    val n: UByteArray,
-    val e: UByteArray
+    val n: ByteArray,
+    val e: ByteArray
 ): COSEKey {
 
     companion object {
         val TAG = this::class.simpleName
     }
 
-    override fun toBytes(): UByteArray? {
+    override fun toBytes(): ByteArray? {
         WAKLogger.w(TAG, "COSE:RSA:toBytes")
 
         try {
@@ -107,10 +106,10 @@ class COSEKeyRSA(
 
             map[COSEKeyFieldType.kty] = COSEKeyType.rsa.toLong()
             map[COSEKeyFieldType.alg] = this.alg.toLong()
-            map[COSEKeyFieldType.n]   = this.n.toByteArray()
-            map[COSEKeyFieldType.e]   = this.e.toByteArray()
+            map[COSEKeyFieldType.n]   = this.n
+            map[COSEKeyFieldType.e]   = this.e
 
-            return CBORWriter().putIntKeyMap(map).compute().toUByteArray()
+            return CBORWriter().putIntKeyMap(map).compute()
 
         } catch (e:Exception) {
             WAKLogger.w(TAG, "failed to build CBOR")
@@ -122,8 +121,8 @@ class COSEKeyRSA(
 
 @ExperimentalUnsignedTypes
 class AttestedCredentialData(
-    val aaguid:              UByteArray,
-    val credentialId:        UByteArray,
+    val aaguid:              ByteArray,
+    val credentialId:        ByteArray,
     val credentialPublicKey: COSEKey
 ) {
 
@@ -131,7 +130,7 @@ class AttestedCredentialData(
         val TAG = this::class.simpleName
     }
 
-    fun toBytes(): UByteArray? {
+    fun toBytes(): ByteArray? {
         val pubKeyBytes = credentialPublicKey.toBytes()
         if (pubKeyBytes == null) {
             WAKLogger.w(TAG, "failed to build COSE key")
@@ -139,9 +138,9 @@ class AttestedCredentialData(
         }
         WAKLogger.d(TAG, "PubKey: length - ${pubKeyBytes.size}")
         val credentialIdLength: UInt = credentialId.size.toUInt()
-        val size1 = (credentialIdLength and 0x0000_ff00u).shr(8).toUByte()
-        val size2 = (credentialIdLength and 0x0000_00ffu).toUByte()
-        val sizeBytes = ubyteArrayOf(size1, size2)
+        val size1 = (credentialIdLength and 0x0000_ff00u).shr(8).toByte()
+        val size2 = (credentialIdLength and 0x0000_00ffu).toByte()
+        val sizeBytes = byteArrayOf(size1, size2)
 
         var result = ByteArrayUtil.merge(aaguid, sizeBytes)
         result = ByteArrayUtil.merge(result, credentialId)
@@ -181,7 +180,7 @@ class AuthenticatorDataFlags(
         */
     }
 
-    fun toByte(): UByte {
+    fun toByte(): Byte {
 
         var result: UInt = 0u
 
@@ -198,13 +197,13 @@ class AuthenticatorDataFlags(
             result = (result or edMask)
         }
 
-        return result.toUByte()
+        return result.toByte()
     }
 }
 
 @ExperimentalUnsignedTypes
 class AuthenticatorData(
-    private val rpIdHash:               UByteArray,
+    private val rpIdHash:               ByteArray,
     private val userPresent:            Boolean,
     private val userVerified:           Boolean,
     private val signCount:              UInt,
@@ -216,24 +215,24 @@ class AuthenticatorData(
         val TAG = this::class.simpleName
     }
 
-    fun toBytes(): UByteArray? {
+    fun toBytes(): ByteArray? {
 
         assert(userPresent != userVerified)
 
-        val flags: UByte = AuthenticatorDataFlags(
+        val flags: Byte = AuthenticatorDataFlags(
             userPresent               = userPresent,
             userVerified              = userVerified,
             hasAttestedCredentialData = (attestedCredentialData != null),
             hasExtension              = extensions.isNotEmpty()
         ).toByte()
 
-        val sc1: UByte = (signCount and 0xff00_0000u).shr(24).toUByte()
-        val sc2: UByte = (signCount and 0x00ff_0000u).shr(16).toUByte()
-        val sc3: UByte = (signCount and 0x0000_ff00u).shr(8).toUByte()
-        val sc4: UByte = (signCount and 0x0000_00ffu).toUByte()
+        val sc1: Byte = (signCount and 0xff00_0000u).shr(24).toByte()
+        val sc2: Byte = (signCount and 0x00ff_0000u).shr(16).toByte()
+        val sc3: Byte = (signCount and 0x0000_ff00u).shr(8).toByte()
+        val sc4: Byte = (signCount and 0x0000_00ffu).toByte()
 
         var result = ByteArrayUtil.merge(rpIdHash,
-            ubyteArrayOf(flags, sc1, sc2, sc3, sc4))
+            byteArrayOf(flags, sc1, sc2, sc3, sc4))
 
         if (attestedCredentialData != null) {
             val attestedCredentialDataBytes = attestedCredentialData.toBytes()
