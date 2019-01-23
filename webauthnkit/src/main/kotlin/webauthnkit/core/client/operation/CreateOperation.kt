@@ -28,7 +28,7 @@ class CreateOperation(
     private val session:        MakeCredentialSession,
     private val clientData:     CollectedClientData,
     private val clientDataJSON: String,
-    private val clientDataHash: UByteArray,
+    private val clientDataHash: ByteArray,
     private val lifetimeTimer:  Long
 ) {
 
@@ -115,7 +115,7 @@ class CreateOperation(
 
             val credId = attestedCred.credentialId
 
-            val resultedAttestationObject: UByteArray?
+            val resultedAttestationObject: ByteArray?
 
             if (options.attestation == AttestationConveyancePreference.None
                 && attestationObject.isSelfAttestation()) {
@@ -135,7 +135,7 @@ class CreateOperation(
                 // replace AAGUID to null
                 val guidPos = 37 // ( rpIdHash(32), flag(1), signCount(4) )
                 for (idx in (guidPos..(guidPos+15))) {
-                    resultedAttestationObject[idx] = 0x00.toUByte()
+                    resultedAttestationObject[idx] = 0x00.toByte()
                 }
 
             } else {

@@ -13,10 +13,11 @@ import webauthnkit.core.authenticator.internal.session.InternalGetAssertionSessi
 import webauthnkit.core.authenticator.internal.session.InternalMakeCredentialSession
 import webauthnkit.core.authenticator.internal.ui.UserConsentUI
 
+@ExperimentalUnsignedTypes
 class InternalAuthenticatorSetting {
     val attachment = AuthenticatorAttachment.Platform
     val transport  = AuthenticatorTransport.Internal
-    var counterStep: Int = 1
+    var counterStep: UInt = 1u
     var allowUserVerification = true
 }
 
@@ -41,7 +42,7 @@ class InternalAuthenticator(
     override val transport: AuthenticatorTransport
         get() = setting.transport
 
-    override var counterStep: Int
+    override var counterStep: UInt
         get() = setting.counterStep
         set(value) { setting.counterStep = value }
 

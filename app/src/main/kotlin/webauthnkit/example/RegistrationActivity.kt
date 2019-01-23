@@ -240,10 +240,11 @@ class RegistrationActivity : AppCompatActivity() {
                           challenge: String, userVerification: UserVerificationRequirement,
                           attestationConveyance: AttestationConveyancePreference) {
 
-        var options = PublicKeyCredentialCreationOptions()
-        options.challenge = ByteArrayUtil.fromHex(challenge).toUByteArray()
+        val options = PublicKeyCredentialCreationOptions()
+        options.challenge = ByteArrayUtil.fromHex(challenge)
         options.user.id = userId
         options.user.name = username
+        options.user.displayName = userDisplayName
         options.user.icon = userIconURL
         options.rp.id = relyingParty
         options.rp.name = relyingParty
@@ -269,7 +270,7 @@ class RegistrationActivity : AppCompatActivity() {
         runOnUiThread {
             val intent = Intent(this, RegistrationResultActivity::class.java)
             intent.putExtra("CRED_ID", cred.id)
-            intent.putExtra("CRED_RAW", ByteArrayUtil.toHex(cred.rawId.toByteArray()))
+            intent.putExtra("CRED_RAW", ByteArrayUtil.toHex(cred.rawId))
             intent.putExtra("ATTESTATION", ByteArrayUtil.encodeBase64URL(cred.response.attestationObject))
             intent.putExtra("CLIENT_JSON", cred.response.clientDataJSON)
             startActivity(intent)

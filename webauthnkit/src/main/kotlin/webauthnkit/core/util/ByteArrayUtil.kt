@@ -1,13 +1,11 @@
 package webauthnkit.core.util
 
 import android.util.Base64
-import kotlinx.serialization.internal.HexConverter
 import kotlinx.serialization.toUtf8Bytes
 import java.nio.ByteBuffer
 import java.security.MessageDigest
 import java.util.*
 
-@ExperimentalUnsignedTypes
 object ByteArrayUtil {
 
     fun sha256(str: String): ByteArray {
@@ -23,10 +21,6 @@ object ByteArrayUtil {
         return Base64.encodeToString(bytes, Base64.URL_SAFE or Base64.NO_PADDING or Base64.NO_WRAP)
     }
 
-    fun encodeBase64URL(bytes: UByteArray): String {
-        return encodeBase64URL(bytes.toByteArray())
-    }
-
     fun zeroUUIDBytes(): ByteArray {
         return byteArrayOf(
             0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
@@ -39,10 +33,6 @@ object ByteArrayUtil {
         buf.putLong(uuid.mostSignificantBits)
         buf.putLong(uuid.leastSignificantBits)
         return buf.array()
-    }
-
-    fun merge(b1: UByteArray, b2: UByteArray): UByteArray {
-        return merge(b1.toByteArray(), b2.toByteArray()).toUByteArray()
     }
 
     fun merge(b1: ByteArray, b2: ByteArray): ByteArray {
@@ -68,12 +58,10 @@ object ByteArrayUtil {
     }
 
     fun fromHex(str: String): ByteArray {
-        //return HexConverter.parseHexBinary(str)
         return ByteArray(str.length / 2) { str.substring(it * 2, it * 2 + 2).toInt(16).toByte() }
     }
 
     fun toHex(bytes: ByteArray): String {
-        //return HexConverter.printHexBinary(bytes, lowerCase = true)
         return buildString {
             for (b in bytes) {
                 append(String.format("%02x", b))

@@ -49,7 +49,7 @@ class InternalGetAssertionSession(
 
     override fun getAssertion(
         rpId:                          String,
-        hash:                          UByteArray,
+        hash:                          ByteArray,
         allowCredentialDescriptorList: List<PublicKeyCredentialDescriptor>,
         requireUserPresence:           Boolean,
         requireUserVerification:       Boolean
@@ -91,7 +91,7 @@ class InternalGetAssertionSession(
             val rpIdHash = ByteArrayUtil.sha256(rpId)
 
             val authenticatorData = AuthenticatorData(
-                rpIdHash               = rpIdHash.toUByteArray(),
+                rpIdHash               = rpIdHash,
                 userPresent            = (requireUserPresence || requireUserVerification),
                 userVerified           = requireUserVerification,
                 signCount              = cred.signCount.toUInt(),
@@ -114,7 +114,7 @@ class InternalGetAssertionSession(
             val dataToBeSigned =
                 ByteArrayUtil.merge(authenticatorDataBytes, hash)
 
-            val signature = keySupport.sign(cred.keyLabel, dataToBeSigned.toByteArray())
+            val signature = keySupport.sign(cred.keyLabel, dataToBeSigned)
             if (signature == null) {
                 stop(ErrorReason.Unknown)
                 return@launch
@@ -122,10 +122,10 @@ class InternalGetAssertionSession(
 
             val assertion =
                 AuthenticatorAssertionResult(
-                    credentialId      = if (allowCredentialDescriptorList.size == 1) { cred.id.toUByteArray() } else { null },
+                    credentialId      = if (allowCredentialDescriptorList.size == 1) { cred.id } else { null },
                     authenticatorData = authenticatorDataBytes,
-                    signature         = signature.toUByteArray(),
-                    userHandle        = cred.userHandle.toUByteArray()
+                    signature         = signature,
+                    userHandle        = cred.userHandle
                 )
 
 
@@ -200,7 +200,7 @@ class InternalGetAssertionSession(
         } else {
 
             allowCredentialDescriptorList.mapNotNull {
-                credentialStore.lookupCredentialSource(it.id.toByteArray())
+                credentialStore.lookupCredentialSource(it.id)
             }
 
         }

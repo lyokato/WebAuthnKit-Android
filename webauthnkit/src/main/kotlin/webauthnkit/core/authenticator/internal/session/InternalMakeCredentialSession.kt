@@ -45,7 +45,7 @@ class InternalMakeCredentialSession(
         get() = setting.transport
 
     override fun makeCredential(
-        hash:                            UByteArray,
+        hash:                            ByteArray,
         rpEntity:                        PublicKeyCredentialRpEntity,
         userEntity:                      PublicKeyCredentialUserEntity,
         requireResidentKey:              Boolean,
@@ -68,7 +68,7 @@ class InternalMakeCredentialSession(
             }
 
             val hasSourceToBeExcluded = excludeCredentialDescriptorList.any {
-                credentialStore.lookupCredentialSource(it.id.toByteArray()) != null
+                credentialStore.lookupCredentialSource(it.id) != null
             }
 
             if (hasSourceToBeExcluded) {
@@ -104,7 +104,7 @@ class InternalMakeCredentialSession(
             WAKLogger.d(TAG, "makeCredential - create new credential source")
 
             val source = PublicKeyCredentialSource(
-                signCount  = 0,
+                signCount  = 0u,
                 id         = credentialId,
                 rpId       = rpId,
                 userHandle = userHandle,
@@ -121,7 +121,7 @@ class InternalMakeCredentialSession(
 
             val pubKey = keySupport.createKeyPair(
                 alias          = source.keyLabel,
-                clientDataHash = hash.toByteArray()
+                clientDataHash = hash
             )
 
             if (pubKey == null) {
@@ -139,8 +139,8 @@ class InternalMakeCredentialSession(
             WAKLogger.d(TAG, "makeCredential - create attested credential data")
 
             val attestedCredentialData = AttestedCredentialData(
-                aaguid              = ByteArrayUtil.zeroUUIDBytes().toUByteArray(),
-                credentialId        = credentialId.toUByteArray(),
+                aaguid              = ByteArrayUtil.zeroUUIDBytes(),
+                credentialId        = credentialId,
                 credentialPublicKey = pubKey
             )
 
@@ -151,7 +151,7 @@ class InternalMakeCredentialSession(
             WAKLogger.d(TAG, "makeCredential - create authenticator data")
 
             val authenticatorData = AuthenticatorData(
-                rpIdHash               = rpIdHash.toUByteArray(),
+                rpIdHash               = rpIdHash,
                 userPresent            = (requireUserPresence || requireUserVerification),
                 userVerified           = requireUserVerification,
                 signCount              = 0.toUInt(),

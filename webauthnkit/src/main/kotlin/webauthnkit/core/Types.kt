@@ -43,25 +43,22 @@ enum class UserVerificationRequirement(val rawValue: String) {
 
 open class AuthenticatorResponse
 
-@ExperimentalUnsignedTypes
 data class AuthenticatorAttestationResponse(
     var clientDataJSON:    String,
-    var attestationObject: UByteArray
+    var attestationObject: ByteArray
 ): AuthenticatorResponse()
 
-@ExperimentalUnsignedTypes
 data class AuthenticatorAssertionResponse(
     var clientDataJSON:    String,
-    var authenticatorData: UByteArray,
-    var signature:         UByteArray,
-    var userHandle:        UByteArray?
+    var authenticatorData: ByteArray,
+    var signature:         ByteArray,
+    var userHandle:        ByteArray?
 ): AuthenticatorResponse()
 
-@ExperimentalUnsignedTypes
 data class PublicKeyCredential<T: AuthenticatorResponse>(
     val type: PublicKeyCredentialType = PublicKeyCredentialType.PublicKey,
     var id: String,
-    var rawId: UByteArray,
+    var rawId: ByteArray,
     var response: T
 )
 
@@ -76,10 +73,9 @@ enum class AuthenticatorTransport(val rawValue: String) {
     }
 }
 
-@ExperimentalUnsignedTypes
 data class PublicKeyCredentialDescriptor(
     val type: PublicKeyCredentialType = PublicKeyCredentialType.PublicKey,
-    var id: UByteArray,
+    var id: ByteArray,
     var transports: MutableList<AuthenticatorTransport> = ArrayList()
 ) {
 
@@ -164,11 +160,10 @@ data class AuthenticatorSelectionCriteria(
     var userVerification: UserVerificationRequirement = UserVerificationRequirement.Required
 )
 
-@ExperimentalUnsignedTypes
 class PublicKeyCredentialCreationOptions(
     var rp: PublicKeyCredentialRpEntity = PublicKeyCredentialRpEntity(),
     var user: PublicKeyCredentialUserEntity = PublicKeyCredentialUserEntity(),
-    var challenge: UByteArray = UByteArray(0),
+    var challenge: ByteArray = ByteArray(0),
     var pubKeyCredParams: MutableList<PublicKeyCredentialParameters> = ArrayList(),
     var timeout: Long? = null,
     var excludeCredentials: MutableList<PublicKeyCredentialDescriptor> = ArrayList(),
@@ -181,15 +176,14 @@ class PublicKeyCredentialCreationOptions(
     }
 }
 
-@ExperimentalUnsignedTypes
 data class PublicKeyCredentialRequestOptions(
-    var challenge: UByteArray = UByteArray(0),
+    var challenge: ByteArray = ByteArray(0),
     var rpId: String? = null,
     var allowCredential: MutableList<PublicKeyCredentialDescriptor> = ArrayList(),
     var userVerification: UserVerificationRequirement = UserVerificationRequirement.Required,
     var timeout: Long? = null
 ) {
-    fun addAllowCredential(credentialId: UByteArray, transports: MutableList<AuthenticatorTransport>) {
+    fun addAllowCredential(credentialId: ByteArray, transports: MutableList<AuthenticatorTransport>) {
         this.allowCredential.add(
             PublicKeyCredentialDescriptor(
                 id         = credentialId,
@@ -199,8 +193,6 @@ data class PublicKeyCredentialRequestOptions(
     }
 }
 
-@ExperimentalUnsignedTypes
 typealias MakeCredentialResponse = PublicKeyCredential<AuthenticatorAttestationResponse>
 
-@ExperimentalUnsignedTypes
 typealias GetAssertionResponse = PublicKeyCredential<AuthenticatorAssertionResponse>
