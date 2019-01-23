@@ -221,7 +221,7 @@ class ECDSAKeySupport(
         }
 
         val attStmt = HashMap<String, Any>()
-        attStmt["alg"] = alg
+        attStmt["alg"] = alg.toLong()
         attStmt["sig"] = sig
 
         if (useSecureHardware(alias)) {
@@ -344,7 +344,7 @@ class LegacyRSAKeySupport(
         }
 
         val attStmt = HashMap<String, Any>()
-        attStmt["alg"] = alg
+        attStmt["alg"] = alg.toLong()
         attStmt["sig"] = sig
 
         return AttestationObject(

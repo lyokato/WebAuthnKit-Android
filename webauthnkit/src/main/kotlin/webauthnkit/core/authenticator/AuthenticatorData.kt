@@ -1,9 +1,8 @@
 package webauthnkit.core.authenticator
 
-import com.fasterxml.jackson.databind.ObjectMapper
-import com.fasterxml.jackson.dataformat.cbor.CBORFactory
 import webauthnkit.core.util.WAKLogger
 import webauthnkit.core.util.ByteArrayUtil
+import webauthnkit.core.util.CBORWriter
 
 object COSEKeyFieldType {
     const val kty:    Int =  1
@@ -69,22 +68,16 @@ class COSEKeyEC2(
         try {
             val map = LinkedHashMap<Int, Any>()
 
-            map[COSEKeyFieldType.kty]    = COSEKeyType.ec2
-            map[COSEKeyFieldType.alg]    = this.alg
-            map[COSEKeyFieldType.crv]    = this.crv
-            map[COSEKeyFieldType.xCoord] = this.x
-            map[COSEKeyFieldType.yCoord] = this.y
+            map[COSEKeyFieldType.kty]    = COSEKeyType.ec2.toLong()
+            map[COSEKeyFieldType.alg]    = this.alg.toLong()
+            map[COSEKeyFieldType.crv]    = this.crv.toLong()
+            map[COSEKeyFieldType.xCoord] = this.x.toByteArray()
+            map[COSEKeyFieldType.yCoord] = this.y.toByteArray()
 
             WAKLogger.d(TAG, ByteArrayUtil.toHex(this.x.toByteArray()))
             WAKLogger.d(TAG, ByteArrayUtil.toHex(this.y.toByteArray()))
 
-           val obj= ObjectMapper(CBORFactory())
-                .writeValueAsBytes(map)
-            WAKLogger.d(TAG, ByteArrayUtil.toHex(obj))
-
-            return ObjectMapper(CBORFactory())
-                .writeValueAsBytes(map)
-                .toUByteArray()
+            return CBORWriter().putIntKeyMap(map).compute().toUByteArray()
 
         } catch (e:Exception) {
             WAKLogger.w(TAG, "failed to build CBOR")
@@ -112,14 +105,12 @@ class COSEKeyRSA(
         try {
             val map = LinkedHashMap<Int, Any>()
 
-            map[COSEKeyFieldType.kty] = COSEKeyType.rsa
-            map[COSEKeyFieldType.alg] = this.alg
-            map[COSEKeyFieldType.n]   = this.n
-            map[COSEKeyFieldType.e]   = this.e
+            map[COSEKeyFieldType.kty] = COSEKeyType.rsa.toLong()
+            map[COSEKeyFieldType.alg] = this.alg.toLong()
+            map[COSEKeyFieldType.n]   = this.n.toByteArray()
+            map[COSEKeyFieldType.e]   = this.e.toByteArray()
 
-            return ObjectMapper(CBORFactory())
-                .writeValueAsBytes(map)
-                .toUByteArray()
+            return CBORWriter().putIntKeyMap(map).compute().toUByteArray()
 
         } catch (e:Exception) {
             WAKLogger.w(TAG, "failed to build CBOR")

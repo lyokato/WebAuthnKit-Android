@@ -2,9 +2,10 @@ package webauthnkit.core.authenticator.internal
 
 import android.util.Base64
 import com.fasterxml.jackson.databind.ObjectMapper
-import com.fasterxml.jackson.dataformat.cbor.CBORFactory
 import webauthnkit.core.util.WAKLogger
 import webauthnkit.core.util.ByteArrayUtil
+import webauthnkit.core.util.CBORReader
+import webauthnkit.core.util.CBORWriter
 
 @ExperimentalUnsignedTypes
 class PublicKeyCredentialSource(
@@ -35,8 +36,54 @@ class PublicKeyCredentialSource(
         fun fromCBOR(bytes: ByteArray): PublicKeyCredentialSource? {
             WAKLogger.d(TAG, "fromCBOR")
             return try {
-                ObjectMapper(CBORFactory()).readValue(bytes,
-                    PublicKeyCredentialSource::class.java)
+
+                val map = CBORReader(bytes.toUByteArray()).readStringKeyMap()!!
+
+                if (!map.containsKey("signCount")) {
+                    WAKLogger.w(TAG, "'signCount' key not found")
+                    return null
+                }
+                val signCount = (map["signCount"] as Long).toInt()
+
+                if (!map.containsKey("alg")) {
+                    WAKLogger.w(TAG, "'alg' key not found")
+                    return null
+                }
+                val alg= (map["alg"] as Long).toInt()
+
+                if (!map.containsKey("id")) {
+                    WAKLogger.w(TAG, "'id' key not found")
+                    return null
+                }
+                val credId= map["id"] as ByteArray
+
+                if (!map.containsKey("rpId")) {
+                    WAKLogger.w(TAG, "'rpId' key not found")
+                    return null
+                }
+                val rpId= map["rpId"] as String
+
+                if (!map.containsKey("userHandle")) {
+                    WAKLogger.w(TAG, "'userHandle' key not found")
+                    return null
+                }
+                val userHandle= map["userHandle"] as ByteArray
+
+                if (!map.containsKey("otherUI")) {
+                    WAKLogger.w(TAG, "'otherUI' key not found")
+                    return null
+                }
+                val otherUI= map["otherUI"] as String
+
+                return PublicKeyCredentialSource(
+                    signCount  = signCount,
+                    id         = credId,
+                    rpId       = rpId,
+                    userHandle = userHandle,
+                    alg        = alg,
+                    otherUI    = otherUI
+                )
+
             } catch (e: Exception) {
                 WAKLogger.w(TAG, "failed to decode CBOR: " + e.localizedMessage)
                 null
@@ -68,16 +115,17 @@ class PublicKeyCredentialSource(
 
     fun toCBOR(): UByteArray? {
         return try {
+
             val map = LinkedHashMap<String, Any>()
             map["id"]         = this.id
             map["rpId"]       = this.rpId
             map["userHandle"] = this.userHandle
-            map["alg"]        = this.alg
-            map["signCount"]  = this.signCount
+            map["alg"]        = this.alg.toLong()
+            map["signCount"]  = this.signCount.toLong()
             map["otherUI"]    = this.otherUI
-            ObjectMapper(CBORFactory())
-                .writeValueAsBytes(map)
-                .toUByteArray()
+
+            return CBORWriter().putStringKeyMap(map).compute().toUByteArray()
+
         } catch (e: Exception) {
             WAKLogger.w(TAG, "failed to encode CBOR: " + e.localizedMessage)
             null

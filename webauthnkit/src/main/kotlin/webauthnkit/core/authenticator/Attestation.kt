@@ -1,8 +1,7 @@
 package webauthnkit.core.authenticator
 
-import com.fasterxml.jackson.databind.ObjectMapper
-import com.fasterxml.jackson.dataformat.cbor.CBORFactory
 import webauthnkit.core.util.ByteArrayUtil
+import webauthnkit.core.util.CBORWriter
 import webauthnkit.core.util.WAKLogger
 
 @ExperimentalUnsignedTypes
@@ -60,9 +59,7 @@ class AttestationObject(
 
             WAKLogger.d(TAG, "AUTH_DATA: " + ByteArrayUtil.toHex(authDataBytes.toByteArray()))
 
-            ObjectMapper(CBORFactory())
-                .writeValueAsBytes(map)
-                .toUByteArray()
+            return CBORWriter().putStringKeyMap(map).compute().toUByteArray()
 
         } catch (e: Exception) {
             WAKLogger.d(TAG, "failed to build attestation binary: " + e.localizedMessage)
