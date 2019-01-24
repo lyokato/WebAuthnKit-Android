@@ -1,6 +1,8 @@
 package webauthnkit.core.authenticator.internal.ui
 
+import android.annotation.TargetApi
 import android.app.Activity
+import android.os.Build
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.GlobalScope
@@ -45,5 +47,22 @@ class UserConsentUI(
             cont.resume(sources[0])
         }
 
+    }
+
+    private fun isFingerprintAvailable(): Boolean {
+        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            return isFingerprintAvailableM()
+        } else {
+            return isFingerprintAvailableN()
+        }
+    }
+
+    @TargetApi(Build.VERSION_CODES.M)
+    private fun isFingerprintAvailableM(): Boolean {
+        return true
+    }
+
+    private fun isFingerprintAvailableN(): Boolean {
+        return false
     }
 }

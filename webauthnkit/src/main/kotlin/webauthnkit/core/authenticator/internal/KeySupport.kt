@@ -133,7 +133,6 @@ class ECDSAKeySupport(
                 crv = COSEKeyCurveType.p256,
                 x   = x,
                 y   = y
-
             )
         } catch (e: Exception) {
             WAKLogger.w(TAG, "failed to create key pair: " + e.localizedMessage)
