@@ -260,9 +260,24 @@ class RegistrationActivity : AppCompatActivity() {
         val operation = client!!.create(options)
 
         GlobalScope.launch {
-            val cred = operation.start()
-            WAKLogger.d(TAG, "CHALLENGE:" + ByteArrayUtil.encodeBase64URL(options.challenge))
-            showResultActivity(cred)
+            try {
+
+                val cred = operation.start()
+                WAKLogger.d(TAG, "CHALLENGE:" + ByteArrayUtil.encodeBase64URL(options.challenge))
+
+                runOnUiThread {
+                    showResultActivity(cred)
+                }
+
+            } catch (e: Exception) {
+
+                WAKLogger.w(TAG, "failed to create")
+
+                runOnUiThread {
+                    toast(e.toString())
+                }
+
+            }
         }
     }
 

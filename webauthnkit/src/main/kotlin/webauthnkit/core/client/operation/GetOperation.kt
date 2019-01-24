@@ -99,12 +99,14 @@ class GetOperation(
 
         override fun onCredentialDiscovered(session: GetAssertionSession,
                                             assertion: AuthenticatorAssertionResult) {
-            WAKLogger.d(TAG, "onCredentialCreated")
+            WAKLogger.d(TAG, "onCredentialDiscovered")
 
 
-            val credId = if (savedCredentialId == null) {
+            val credId = if (savedCredentialId != null) {
+                WAKLogger.d(TAG, "onCredentialDiscovered - use saved credId")
                 savedCredentialId
             } else {
+                WAKLogger.d(TAG, "onCredentialDiscovered - use selected credId")
                 val selectedCredId = assertion.credentialId
                 if (selectedCredId == null) {
                     WAKLogger.w(TAG, "selected credential Id not found")
@@ -114,12 +116,16 @@ class GetOperation(
                 selectedCredId
             }
 
+            WAKLogger.d(TAG, "onCredentialDiscovered - create assertion response")
+
             val response = AuthenticatorAssertionResponse(
                 clientDataJSON    = clientDataJSON,
                 authenticatorData = assertion.authenticatorData,
                 signature         = assertion.signature,
                 userHandle        = assertion.userHandle
             )
+
+            WAKLogger.d(TAG, "onCredentialDiscovered - create credential")
 
             val cred = PublicKeyCredential(
                 rawId    = credId!!,
@@ -129,6 +135,7 @@ class GetOperation(
 
             completed()
 
+            WAKLogger.d(TAG, "onCredentialDiscovered - resume")
             continuation?.resume(cred)
             continuation = null
 
@@ -152,8 +159,15 @@ class GetOperation(
         WAKLogger.d(TAG, "start")
 
         GlobalScope.launch {
+
             if (stopped) {
                 WAKLogger.d(TAG, "already stopped")
+                cont.resumeWithException(BadOperationException())
+                return@launch
+            }
+
+            if (continuation != null) {
+                WAKLogger.d(TAG, "continuation already exists")
                 cont.resumeWithException(BadOperationException())
                 return@launch
             }

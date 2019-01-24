@@ -3,6 +3,7 @@ package webauthnkit.core.authenticator.internal
 import android.content.ContentValues
 import android.content.Context
 import android.database.sqlite.SQLiteDatabase
+import android.database.sqlite.SQLiteDatabase.CONFLICT_REPLACE
 import android.database.sqlite.SQLiteOpenHelper
 import kotlinx.serialization.ImplicitReflectionSerializer
 import webauthnkit.core.util.WAKLogger
@@ -138,22 +139,18 @@ class CredentialStoreDatabaseHelper(
     fun delete(id: String):Boolean {
         WAKLogger.d(TAG, "delete")
         val db = writableDatabase
-        db.beginTransaction()
         return try {
             db.delete(TableName, "$ColumnId = ?", arrayOf(id))
             true
         } catch (e: Exception) {
             WAKLogger.w(TAG, "failed to delete: " + e.localizedMessage)
             false
-        } finally {
-            db.endTransaction()
         }
     }
 
     fun deleteByRpId(rpId: String): Boolean {
         WAKLogger.d(TAG, "deleteByRpId")
         val db = writableDatabase
-        db.beginTransaction()
 
         return try {
             db.delete(TableName, "$ColumnRpId = ?", arrayOf(rpId))
@@ -161,15 +158,12 @@ class CredentialStoreDatabaseHelper(
         } catch (e: Exception) {
             WAKLogger.w(TAG, "failed to delete: " + e.localizedMessage)
             false
-        } finally {
-            db.endTransaction()
         }
     }
 
     fun deleteAll(): Boolean {
         WAKLogger.d(TAG, "deleteAll")
         val db = writableDatabase
-        db.beginTransaction()
 
         return try {
             db.delete(TableName, null, null)
@@ -177,8 +171,6 @@ class CredentialStoreDatabaseHelper(
         } catch (e: Exception) {
             WAKLogger.w(TAG, "failed to delete: " + e.localizedMessage)
             false
-        } finally {
-            db.endTransaction()
         }
     }
 
@@ -222,20 +214,17 @@ class CredentialStoreDatabaseHelper(
         WAKLogger.d(TAG, "save $rpId")
 
         val db = writableDatabase
-        db.beginTransaction()
 
         return try {
             val values = ContentValues()
             values.put(ColumnId, id)
             values.put(ColumnRpId, rpId)
             values.put(ColumnContent, content)
-            db.insertOrThrow(TableName, null, values)
+            db.insertWithOnConflict(TableName, null, values, CONFLICT_REPLACE)
             true
         } catch (e: Exception) {
             WAKLogger.w(TAG, "failed to insert: " + e.localizedMessage)
             false
-        } finally {
-            db.endTransaction()
         }
     }
 }
