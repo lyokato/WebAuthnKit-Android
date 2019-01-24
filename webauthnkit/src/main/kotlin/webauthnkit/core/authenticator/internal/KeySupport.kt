@@ -42,7 +42,7 @@ object AttestationFormatType {
 class KeySupportChooser(private val context: Context) {
 
     companion object {
-        val TAG = this::class.simpleName
+        val TAG = KeySupportChooser::class.simpleName
     }
 
     fun choose(algorithms: List<Int>): KeySupport? {
@@ -106,7 +106,7 @@ class ECDSAKeySupport(
 ): KeySupport {
 
     companion object {
-        val TAG = this::class.simpleName
+        val TAG = ECDSAKeySupport::class.simpleName
     }
 
     override fun createKeyPair(alias: String, clientDataHash: ByteArray): COSEKey? {
@@ -269,7 +269,7 @@ class LegacyRSAKeySupport(
 ): KeySupport {
 
     companion object {
-        val TAG = this::class.simpleName
+        val TAG = LegacyRSAKeySupport::class.simpleName
     }
 
     override fun createKeyPair(alias: String, clientDataHash: ByteArray): COSEKey? {

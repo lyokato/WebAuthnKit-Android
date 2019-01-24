@@ -24,7 +24,7 @@ class WebAuthnClient(
 ) {
 
     companion object {
-        val TAG = this::class.simpleName
+        val TAG = WebAuthnClient::class.simpleName
     }
 
     var defaultTimeout: Long = 60

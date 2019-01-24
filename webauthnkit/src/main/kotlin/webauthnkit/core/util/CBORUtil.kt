@@ -67,7 +67,7 @@ class CBORReader(private val bytes: ByteArray) {
     private var cursor = 0
 
     companion object {
-        private val TAG = this::class.simpleName
+        private val TAG = CBORReader::class.simpleName
     }
 
     fun getReadSize(): Int {

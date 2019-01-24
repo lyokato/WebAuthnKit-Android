@@ -14,7 +14,7 @@ import webauthnkit.core.util.WAKLogger
 class RegistrationResultActivity : AppCompatActivity() {
 
     companion object {
-        private val TAG = this::class.simpleName
+        private val TAG = RegistrationResultActivity::class.simpleName
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {

@@ -31,7 +31,7 @@ class UserConsentUI(
     private val activity: FragmentActivity
 ) {
     companion object {
-        val TAG = this::class.simpleName
+        val TAG = UserConsentUI::class.simpleName
     }
 
     var biometricPromptTitle         = "Title"

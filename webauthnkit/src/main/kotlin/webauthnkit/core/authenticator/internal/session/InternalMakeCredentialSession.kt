@@ -30,7 +30,7 @@ class InternalMakeCredentialSession(
 ) : MakeCredentialSession {
 
     companion object {
-        val TAG = this::class.simpleName
+        val TAG = InternalMakeCredentialSession::class.simpleName
     }
 
     private var stopped = false

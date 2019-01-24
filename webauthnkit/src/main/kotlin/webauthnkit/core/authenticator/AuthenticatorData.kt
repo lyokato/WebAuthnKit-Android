@@ -58,7 +58,7 @@ class COSEKeyEC2(
 ): COSEKey {
 
     companion object {
-        val TAG = this::class.simpleName
+        val TAG = COSEKeyEC2::class.simpleName
     }
 
     override fun toBytes(): ByteArray? {
@@ -95,7 +95,7 @@ class COSEKeyRSA(
 ): COSEKey {
 
     companion object {
-        val TAG = this::class.simpleName
+        val TAG = COSEKeyRSA::class.simpleName
     }
 
     override fun toBytes(): ByteArray? {
@@ -127,7 +127,7 @@ class AttestedCredentialData(
 ) {
 
     companion object {
-        val TAG = this::class.simpleName
+        val TAG = AttestedCredentialData::class.simpleName
     }
 
     fun toBytes(): ByteArray? {
@@ -158,7 +158,7 @@ class AuthenticatorDataFlags(
 ) {
 
     companion object {
-        val TAG = this::class.simpleName
+        val TAG = AuthenticatorDataFlags::class.simpleName
         val upMask: UInt = 0b0000_0001u
         val uvMask: UInt = 0b0000_0100u
         val atMask: UInt = 0b0100_0000u
@@ -212,7 +212,7 @@ class AuthenticatorData(
 ) {
 
     companion object {
-        val TAG = this::class.simpleName
+        val TAG = AuthenticatorData::class.simpleName
     }
 
     fun toBytes(): ByteArray? {

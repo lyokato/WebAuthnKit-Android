@@ -12,7 +12,7 @@ class AttestationObject(
 ) {
 
     companion object {
-        val TAG = this::class.simpleName
+        val TAG = AttestationObject::class.simpleName
     }
 
     fun toNone(): AttestationObject {

@@ -18,7 +18,7 @@ class PublicKeyCredentialSource(
 
     companion object {
 
-        val TAG = this::class.simpleName
+        val TAG = PublicKeyCredentialSource::class.simpleName
 
         fun fromBase64(str: String): PublicKeyCredentialSource? {
             WAKLogger.d(TAG, "fromBase64")

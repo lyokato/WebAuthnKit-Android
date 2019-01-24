@@ -14,7 +14,7 @@ import java.lang.Exception
 class CredentialStore(context: Context) {
 
     companion object {
-        val TAG = this::class.simpleName
+        val TAG = CredentialStore::class.simpleName
         private const val DatabaseName = "webauthnkit.db"
         private const val DatabaseVersion = 1
     }
@@ -81,7 +81,7 @@ class CredentialStoreDatabaseHelper(
 ): SQLiteOpenHelper(context, name, null, version) {
 
     companion object {
-        private val TAG = this::class.simpleName
+        private val TAG = CredentialStoreDatabaseHelper::class.simpleName
         private const val TableName = "credentials"
         private const val ColumnId       = "id"
         private const val ColumnRpId     = "rp_id"

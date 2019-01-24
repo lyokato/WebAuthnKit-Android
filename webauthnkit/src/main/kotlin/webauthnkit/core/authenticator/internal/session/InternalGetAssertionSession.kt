@@ -32,7 +32,7 @@ class InternalGetAssertionSession(
 ) : GetAssertionSession {
 
     companion object {
-        val TAG = this::class.simpleName
+        val TAG = InternalGetAssertionSession::class.simpleName
     }
 
     private var started = false

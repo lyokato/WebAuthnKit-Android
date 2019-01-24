@@ -30,7 +30,7 @@ import webauthnkit.core.util.WAKLogger
 class AuthenticationActivity : AppCompatActivity() {
 
     companion object {
-        private val TAG = this::class.simpleName
+        private val TAG = AuthenticationActivity::class.simpleName
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -39,6 +39,8 @@ class AuthenticationActivity : AppCompatActivity() {
         val userVerificationOptions = listOf("Required", "Preferred", "Discouraged")
 
         verticalLayout {
+
+            padding = dip(10)
 
             textView {
                 text = "Relying Party"
@@ -155,9 +157,26 @@ class AuthenticationActivity : AppCompatActivity() {
         val operation = client!!.get(options)
 
         GlobalScope.launch {
-            val cred = operation.start()
-            WAKLogger.d(TAG, "CHALLENGE:" + ByteArrayUtil.encodeBase64URL(options.challenge))
-            showResultActivity(cred)
+
+            try {
+
+                val cred = operation.start()
+                WAKLogger.d(TAG, "CHALLENGE:" + ByteArrayUtil.encodeBase64URL(options.challenge))
+
+                runOnUiThread {
+                    showResultActivity(cred)
+                }
+
+            } catch (e: Exception) {
+
+                WAKLogger.w(TAG, "failed to get")
+
+                runOnUiThread {
+                    toast(e.toString())
+                }
+
+
+            }
         }
 
     }

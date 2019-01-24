@@ -33,7 +33,7 @@ class CreateOperation(
 ) {
 
     companion object {
-        val TAG = this::class.simpleName
+        val TAG = CreateOperation::class.simpleName
     }
 
     private var stopped: Boolean = false
@@ -242,9 +242,7 @@ class CreateOperation(
 
     private fun dispatchError(reason: ErrorReason) {
         WAKLogger.d(TAG, "dispatchError")
-        GlobalScope.launch(Dispatchers.Unconfined) {
-            continuation?.resumeWithException(reason.rawValue)
-        }
+        continuation?.resumeWithException(reason.rawValue)
     }
 
     private var timer: Timer? = null

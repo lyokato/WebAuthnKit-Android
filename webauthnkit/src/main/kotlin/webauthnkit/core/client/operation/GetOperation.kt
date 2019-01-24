@@ -32,7 +32,7 @@ class GetOperation(
 ) {
 
     companion object {
-        val TAG = this::class.simpleName
+        val TAG = GetOperation::class.simpleName
     }
 
     private var stopped: Boolean = false
@@ -136,6 +136,7 @@ class GetOperation(
 
         override fun onOperationStopped(session: GetAssertionSession, reason: ErrorReason) {
             WAKLogger.d(TAG, "onOperationStopped")
+            stop(reason)
         }
 
         override fun onUnavailable(session: GetAssertionSession) {
@@ -173,6 +174,7 @@ class GetOperation(
     private fun stop(reason: ErrorReason) {
         WAKLogger.d(TAG, "stop")
         stopInternal(reason)
+        WAKLogger.d(TAG, "stop-2")
         dispatchError(reason)
     }
 
@@ -199,9 +201,7 @@ class GetOperation(
 
     private fun dispatchError(reason: ErrorReason) {
         WAKLogger.d(TAG, "dispatchError")
-        GlobalScope.launch(Dispatchers.Unconfined) {
-            continuation?.resumeWithException(reason.rawValue)
-        }
+        continuation?.resumeWithException(reason.rawValue)
     }
 
     private var timer: Timer? = null

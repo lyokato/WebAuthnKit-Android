@@ -31,7 +31,7 @@ class InternalAuthenticator(
 ) : Authenticator {
 
     companion object {
-        val TAG = this::class.simpleName
+        val TAG = InternalAuthenticator::class.simpleName
     }
 
     private val setting = InternalAuthenticatorSetting()
