@@ -97,7 +97,7 @@ class RegistrationActivity : AppCompatActivity() {
             relyingPartyICONField.setText("https://developers.google.com/identity/images/g-logo.png")
 
             textView {
-                text = "Challenge"
+                text = "Challenge (Hex)"
             }
 
             val challengeField = editText {

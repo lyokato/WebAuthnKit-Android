@@ -18,7 +18,7 @@ class AuthenticationResultActivity : AppCompatActivity() {
     }
 
     private fun onCloseButtonClicked() {
-
+        finish()
     }
 
 }

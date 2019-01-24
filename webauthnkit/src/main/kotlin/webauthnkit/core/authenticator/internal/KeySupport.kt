@@ -157,6 +157,8 @@ class ECDSAKeySupport(
             .setAlgorithmParameterSpec(ECGenParameterSpec(CurveType.SECP256r1))
             .setDigests(
                 KeyProperties.DIGEST_SHA256)
+            //.setIsStrongBoxBacked(true)
+            //.setUnlockedDeviceRequired(true)
             .setUserAuthenticationRequired(false)
             .setUserAuthenticationValidityDurationSeconds(5 * 60)
             .setAttestationChallenge(clientDataHash)
