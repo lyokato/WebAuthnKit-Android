@@ -183,7 +183,7 @@ class CredentialStoreDatabaseHelper(
     }
 
     fun searchByRpId(rpId: String): List<PublicKeyCredentialSource> {
-        WAKLogger.d(TAG, "searchByRpId")
+        WAKLogger.d(TAG, "searchByRpId: $rpId")
 
         val db = readableDatabase
 
@@ -198,9 +198,12 @@ class CredentialStoreDatabaseHelper(
 
         cursor.use {
 
+            WAKLogger.d(TAG, "searchByRpId: cursor")
+
             val results: MutableList<PublicKeyCredentialSource> = mutableListOf()
 
             while (it.moveToNext()) {
+                WAKLogger.d(TAG, "searchByRpId: iterate")
                 val content = it.getString(it.getColumnIndex(ColumnContent))
                 val source = PublicKeyCredentialSource.fromBase64(content)
                 if (source != null) {
@@ -216,7 +219,7 @@ class CredentialStoreDatabaseHelper(
     }
 
     fun save(id: String, rpId: String, content: String): Boolean {
-        WAKLogger.d(TAG, "save")
+        WAKLogger.d(TAG, "save $rpId")
 
         val db = writableDatabase
         db.beginTransaction()
