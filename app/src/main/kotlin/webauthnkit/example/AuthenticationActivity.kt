@@ -6,9 +6,6 @@ import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity;
 import com.jaredrummler.materialspinner.MaterialSpinner
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.ImplicitReflectionSerializer
 import org.jetbrains.anko.*
 import org.jetbrains.anko.sdk27.coroutines.onClick
