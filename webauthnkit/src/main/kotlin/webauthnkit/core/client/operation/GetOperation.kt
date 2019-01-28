@@ -7,7 +7,6 @@ import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
 import kotlin.coroutines.suspendCoroutine
 
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
@@ -34,6 +33,9 @@ class GetOperation(
     companion object {
         val TAG = GetOperation::class.simpleName
     }
+
+    val opId: String = UUID.randomUUID().toString()
+    var listener: OperationListener? = null
 
     private var stopped: Boolean = false
     private var savedCredentialId: ByteArray? = null
@@ -163,12 +165,14 @@ class GetOperation(
             if (stopped) {
                 WAKLogger.d(TAG, "already stopped")
                 cont.resumeWithException(BadOperationException())
+                listener?.onFinish(OperationType.Get, opId)
                 return@launch
             }
 
             if (continuation != null) {
                 WAKLogger.d(TAG, "continuation already exists")
                 cont.resumeWithException(BadOperationException())
+                listener?.onFinish(OperationType.Get, opId)
                 return@launch
             }
 
@@ -181,8 +185,27 @@ class GetOperation(
         }
     }
 
-    fun cancel() {
+    fun cancel(reason: ErrorReason = ErrorReason.Timeout) {
         WAKLogger.d(TAG, "cancel")
+        if (continuation != null && !this.stopped) {
+            GlobalScope.launch {
+                when (session.transport) {
+                    AuthenticatorTransport.Internal -> {
+                        when (reason) {
+                            ErrorReason.Timeout -> {
+                                session.cancel(ErrorReason.Timeout)
+                            }
+                            else -> {
+                                session.cancel(ErrorReason.Cancelled)
+                            }
+                        }
+                    }
+                    else -> {
+                        stop(reason)
+                    }
+                }
+            }
+        }
     }
 
     private fun stop(reason: ErrorReason) {
@@ -195,6 +218,7 @@ class GetOperation(
     private fun completed() {
         WAKLogger.d(TAG, "completed")
         stopTimer()
+        listener?.onFinish(OperationType.Get, opId)
     }
 
     private fun stopInternal(reason: ErrorReason) {
@@ -210,7 +234,7 @@ class GetOperation(
         }
         stopTimer()
         session.cancel(reason)
-        // listener!.onFinish()
+        listener?.onFinish(OperationType.Get, opId)
     }
 
     private fun dispatchError(reason: ErrorReason) {
@@ -240,7 +264,8 @@ class GetOperation(
 
     private fun onTimeout() {
         WAKLogger.d(TAG, "onTimeout")
-        stop(ErrorReason.Timeout)
+        stopTimer()
+        cancel(ErrorReason.Timeout)
     }
 
     private fun judgeUserVerificationExecution(session: GetAssertionSession): Boolean {
