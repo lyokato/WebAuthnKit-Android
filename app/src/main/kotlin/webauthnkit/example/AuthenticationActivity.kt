@@ -8,6 +8,7 @@ import com.jaredrummler.materialspinner.MaterialSpinner
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.ImplicitReflectionSerializer
 import org.jetbrains.anko.*
 import org.jetbrains.anko.sdk27.coroutines.onClick
@@ -137,9 +138,7 @@ class AuthenticationActivity : AppCompatActivity() {
 
     }
 
-    var client: WebAuthnClient? = null
-
-    private fun onExecute(relyingParty: String, challenge: String,
+    private suspend fun onExecute(relyingParty: String, challenge: String,
                           credId: String, userVerification: UserVerificationRequirement) {
 
         val options = PublicKeyCredentialRequestOptions()
@@ -153,32 +152,26 @@ class AuthenticationActivity : AppCompatActivity() {
                 transports   = mutableListOf(AuthenticatorTransport.Internal))
         }
 
-        client = createClient()
-        val operation = client!!.get(options)
+        try {
 
-        GlobalScope.launch {
+            val client = createClient()
+            val cred = client.get(options)
+            WAKLogger.d(TAG, "CHALLENGE:" + ByteArrayUtil.encodeBase64URL(options.challenge))
+            showResultActivity(cred)
 
-            try {
+        } catch (e: Exception) {
 
-                val cred = operation.start()
-                WAKLogger.d(TAG, "CHALLENGE:" + ByteArrayUtil.encodeBase64URL(options.challenge))
+            WAKLogger.w(TAG, "failed to get")
+            showErrorPopup(e.toString())
 
-                runOnUiThread {
-                    showResultActivity(cred)
-                }
-
-            } catch (e: Exception) {
-
-                WAKLogger.w(TAG, "failed to get")
-
-                runOnUiThread {
-                    toast(e.toString())
-                }
-
-
-            }
         }
 
+    }
+
+    private fun showErrorPopup(msg: String) {
+        runOnUiThread {
+            toast(msg)
+        }
     }
 
     private fun showResultActivity(cred: GetAssertionResponse) {

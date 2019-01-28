@@ -4,14 +4,13 @@ import com.fasterxml.jackson.annotation.JsonInclude
 import com.fasterxml.jackson.databind.ObjectMapper
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.serialization.ImplicitReflectionSerializer
+import webauthnkit.core.*
 
-import webauthnkit.core.CollectedClientData
-import webauthnkit.core.CollectedClientDataType
-import webauthnkit.core.PublicKeyCredentialCreationOptions
-import webauthnkit.core.PublicKeyCredentialRequestOptions
 import webauthnkit.core.authenticator.Authenticator
 import webauthnkit.core.client.operation.CreateOperation
 import webauthnkit.core.client.operation.GetOperation
+import webauthnkit.core.client.operation.OperationListener
+import webauthnkit.core.client.operation.OperationType
 import webauthnkit.core.util.WAKLogger
 import webauthnkit.core.util.ByteArrayUtil
 
@@ -21,7 +20,7 @@ import webauthnkit.core.util.ByteArrayUtil
 class WebAuthnClient(
     private val authenticator: Authenticator,
     private val origin:        String
-) {
+): OperationListener {
 
     companion object {
         val TAG = WebAuthnClient::class.simpleName
@@ -31,7 +30,17 @@ class WebAuthnClient(
     var minTimeout:     Long = 15
     var maxTimeout:     Long = 120
 
-    fun get(options: PublicKeyCredentialRequestOptions): GetOperation {
+    private val getOperations: MutableMap<String, GetOperation> = HashMap()
+    private val createOperations: MutableMap<String, CreateOperation> = HashMap()
+
+    suspend fun get(options: PublicKeyCredentialRequestOptions): GetAssertionResponse {
+        val op = newGetOperation(options)
+        op.listener = this
+        getOperations[op.opId] = op
+        return op.start()
+    }
+
+    private fun newGetOperation(options: PublicKeyCredentialRequestOptions): GetOperation {
         WAKLogger.d(TAG, "get")
 
         val timer = adjustLifetimeTimer(options.timeout)
@@ -56,7 +65,15 @@ class WebAuthnClient(
         )
     }
 
-    fun create(options: PublicKeyCredentialCreationOptions): CreateOperation {
+    suspend fun create(options: PublicKeyCredentialCreationOptions): MakeCredentialResponse {
+        val op = newCreateOperation(options)
+        op.listener = this
+        createOperations[op.opId] = op
+        return op.start()
+    }
+
+
+    private fun newCreateOperation(options: PublicKeyCredentialCreationOptions): CreateOperation {
         WAKLogger.d(TAG, "create")
 
         val timer = adjustLifetimeTimer(options.timeout)
@@ -79,6 +96,12 @@ class WebAuthnClient(
             clientDataHash = hash,
             lifetimeTimer  = timer
         )
+    }
+
+    fun cancel() {
+        WAKLogger.d(TAG, "cancel")
+        getOperations.forEach { it.value.cancel()}
+        createOperations.forEach { it.value.cancel()}
     }
 
     private fun adjustLifetimeTimer(timeout: Long?): Long {
@@ -117,7 +140,25 @@ class WebAuthnClient(
     }
 
     private fun encodeJSON(data: CollectedClientData): String {
-        //val json = JSON.stringify(data)
-        return ObjectMapper().setSerializationInclusion(JsonInclude.Include.NON_NULL).writeValueAsString(data)
+        return ObjectMapper()
+            .setSerializationInclusion(JsonInclude.Include.NON_NULL)
+            .writeValueAsString(data)
     }
+
+    override fun onFinish(opType: OperationType, opId: String) {
+        WAKLogger.d(TAG, "operation finished")
+        when (opType) {
+            OperationType.Get -> {
+                if (getOperations.containsKey(opId)) {
+                    getOperations.remove(opId)
+                }
+            }
+            OperationType.Create -> {
+                if (createOperations.containsKey(opId)) {
+                    createOperations.remove(opId)
+                }
+            }
+        }
+    }
+
 }

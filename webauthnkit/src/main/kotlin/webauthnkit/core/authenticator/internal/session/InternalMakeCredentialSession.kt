@@ -84,12 +84,14 @@ class InternalMakeCredentialSession(
 
 
             val keyName = try {
+                WAKLogger.d(TAG, "makeCredential - requestUserConsent")
                 ui.requestUserConsent(
                     rpEntity                = rpEntity,
                     userEntity              = userEntity,
                     requireUserVerification = requireUserVerification
                 )
             } catch(e: Exception) {
+                WAKLogger.d(TAG, "makeCredential - requestUserConsent failure: ${e.message}")
                 // TODO classify error
                 stop(ErrorReason.Cancelled)
                 return@launch

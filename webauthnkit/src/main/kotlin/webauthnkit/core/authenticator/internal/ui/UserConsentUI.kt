@@ -1,6 +1,7 @@
 package webauthnkit.core.authenticator.internal.ui
 
 import android.annotation.TargetApi
+import android.app.WallpaperColors
 import android.content.pm.PackageManager
 import android.os.Build
 import androidx.biometric.BiometricPrompt
@@ -47,8 +48,11 @@ class UserConsentUI(
         requireUserVerification: Boolean
     ): String = suspendCoroutine { cont ->
 
+        WAKLogger.d(TAG, "requestUserConsent")
+
         GlobalScope.launch(Dispatchers.Unconfined) {
 
+            WAKLogger.d(TAG, "requestUserConsent switched to UI thread")
             // TODO
             // let user to confirm site information and create key name
 
@@ -82,6 +86,8 @@ class UserConsentUI(
         sources:                 List<PublicKeyCredentialSource>,
         requireUserVerification: Boolean
     ): PublicKeyCredentialSource = suspendCoroutine { cont ->
+
+        WAKLogger.d(TAG, "requestUserSelection")
 
         GlobalScope.launch(Dispatchers.Unconfined) {
 
@@ -131,6 +137,8 @@ class UserConsentUI(
 
     @TargetApi(Build.VERSION_CODES.M)
     private fun <T> showBiometricPrompt(consentResult: T, cont: Continuation<T>) {
+
+        WAKLogger.d(TAG, "showBiometricPrompt")
 
         val info =
             BiometricPrompt.PromptInfo.Builder()

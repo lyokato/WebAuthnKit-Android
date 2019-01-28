@@ -8,6 +8,7 @@ import com.jaredrummler.materialspinner.MaterialSpinner
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.ImplicitReflectionSerializer
 import org.jetbrains.anko.*
 import org.jetbrains.anko.sdk27.coroutines.onClick
@@ -233,9 +234,7 @@ class RegistrationActivity : AppCompatActivity() {
         }
     }
 
-    var client: WebAuthnClient? = null
-
-    private fun onExecute(userId: String, username: String, userDisplayName: String,
+    private suspend fun onExecute(userId: String, username: String, userDisplayName: String,
                           userIconURL: String, relyingParty: String, relyingPartyICON: String,
                           challenge: String, userVerification: UserVerificationRequirement,
                           attestationConveyance: AttestationConveyancePreference) {
@@ -256,28 +255,24 @@ class RegistrationActivity : AppCompatActivity() {
             userVerification   = userVerification
         )
 
-        client = createClient()
-        val operation = client!!.create(options)
+        try {
 
-        GlobalScope.launch {
-            try {
+            val client = createClient()
+            val cred = client.create(options)
+            WAKLogger.d(TAG, "CHALLENGE:" + ByteArrayUtil.encodeBase64URL(options.challenge))
+            showResultActivity(cred)
 
-                val cred = operation.start()
-                WAKLogger.d(TAG, "CHALLENGE:" + ByteArrayUtil.encodeBase64URL(options.challenge))
+        } catch (e: Exception) {
 
-                runOnUiThread {
-                    showResultActivity(cred)
-                }
+            WAKLogger.w(TAG, "failed to create")
+            showErrorPopup(e.toString())
 
-            } catch (e: Exception) {
+        }
+    }
 
-                WAKLogger.w(TAG, "failed to create")
-
-                runOnUiThread {
-                    toast(e.toString())
-                }
-
-            }
+    private fun showErrorPopup(msg: String) {
+        runOnUiThread {
+            toast(msg)
         }
     }
 
