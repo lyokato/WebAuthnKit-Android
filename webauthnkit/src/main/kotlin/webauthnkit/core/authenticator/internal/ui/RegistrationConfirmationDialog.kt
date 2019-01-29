@@ -121,10 +121,6 @@ class RegistrationConfirmationDialog(
         dialog.show()
     }
 
-    fun dismiss() {
-        dialog.dismiss()
-    }
-
     private fun getDefaultKeyName(): String {
         val date = DateFormat.format("yyyyMMdd", Calendar.getInstance())
         return "${userEntity.name}($date)"
