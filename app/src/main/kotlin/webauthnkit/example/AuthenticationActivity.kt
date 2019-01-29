@@ -170,6 +170,7 @@ class AuthenticationActivity : AppCompatActivity() {
     }
 
     private fun showResultActivity(cred: GetAssertionResponse) {
+        WAKLogger.d(TAG, "show result activity")
         runOnUiThread {
             val intent = Intent(this, AuthenticationResultActivity::class.java)
             intent.putExtra("CRED_ID", cred.id)
@@ -178,6 +179,7 @@ class AuthenticationActivity : AppCompatActivity() {
             intent.putExtra("AUTHENTICATOR_DATA", ByteArrayUtil.encodeBase64URL(cred.response.authenticatorData))
             intent.putExtra("SIGNATURE", ByteArrayUtil.toHex(cred.response.signature))
             intent.putExtra("USER_HANDLE", String(bytes = cred.response.userHandle!!, charset = Charsets.UTF_8))
+            WAKLogger.d(TAG, "start activity")
             startActivity(intent)
         }
     }

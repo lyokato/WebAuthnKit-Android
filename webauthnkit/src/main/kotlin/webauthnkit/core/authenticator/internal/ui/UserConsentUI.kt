@@ -1,40 +1,21 @@
 package webauthnkit.core.authenticator.internal.ui
 
 import android.annotation.TargetApi
-import android.app.Dialog
 import android.content.pm.PackageManager
-import android.graphics.Color
-import android.graphics.drawable.ColorDrawable
 import android.os.Build
-import android.text.format.DateFormat
-import android.view.Window
-import android.view.WindowManager
-import android.widget.Button
-import android.widget.EditText
-import android.widget.ImageView
-import android.widget.TextView
 import androidx.biometric.BiometricPrompt
 import androidx.fragment.app.FragmentActivity
-import com.bumptech.glide.Glide
-import com.bumptech.glide.load.MultiTransformation
-import com.bumptech.glide.load.resource.bitmap.CenterCrop
-import com.bumptech.glide.load.resource.bitmap.RoundedCorners
-import com.bumptech.glide.request.RequestOptions
 
 import kotlin.coroutines.resume
 import kotlin.coroutines.suspendCoroutine
 import kotlin.coroutines.Continuation
 import kotlin.coroutines.resumeWithException
 
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.launch
 import webauthnkit.core.*
 
 import webauthnkit.core.authenticator.internal.PublicKeyCredentialSource
 import webauthnkit.core.util.WAKLogger
-import java.util.*
 
 import java.util.concurrent.Executors
 
@@ -50,6 +31,8 @@ class UserConsentUI(
     var biometricPromptCreateKeyTitle   = "Create key?"
     var biometricPromptSelectKeyTitle   = "Use this key?"
     var biometricPromptCancelButtonText = "CANCEL"
+
+    var alwaysShowKeySelection: Boolean = false
 
     private val executor = Executors.newSingleThreadExecutor()
 
@@ -117,31 +100,77 @@ class UserConsentUI(
 
         activity.runOnUiThread {
 
-            // TODO
-            // request user to select key from list
-            val selectedSource = sources[0]
+            if (sources.size == 1 && !alwaysShowKeySelection) {
 
-            if (requireUserVerification) {
+                WAKLogger.d(TAG, "found 1 source, skip selection")
 
-                if (isFingerprintAvailable()) {
-
-                    showBiometricPrompt(biometricPromptSelectKeyTitle, selectedSource, cont)
-
-                } else {
-
-                    // TODO fallback
-                    // Passcode with Keyguard manager
-                    cont.resumeWithException(CancelledException())
-                }
+                executeSelectionVerificationIfNeeded(
+                    requireUserVerification = requireUserVerification,
+                    source                  = sources[0],
+                    cont                    = cont
+                )
 
             } else {
 
-                cont.resume(selectedSource)
+                WAKLogger.d(TAG, "show selection dialog")
+
+                val dialog = SelectionConformationDialog(
+                    activity = activity,
+                    sources  = sources
+                )
+
+                dialog.listener = object: SelectionConfirmationDialogInterface {
+
+                    override fun onSelect(source: PublicKeyCredentialSource) {
+
+                        WAKLogger.d(TAG, "selected")
+
+                        executeSelectionVerificationIfNeeded(
+                            requireUserVerification = requireUserVerification,
+                            source                  = source,
+                            cont                    = cont
+                        )
+
+                    }
+
+                    override fun onCancel() {
+                        WAKLogger.d(TAG, "canceled")
+                        cont.resumeWithException(CancelledException())
+                    }
+
+                }
+
+                dialog.show()
 
             }
 
         }
 
+    }
+
+    private fun executeSelectionVerificationIfNeeded(
+        requireUserVerification: Boolean,
+        source:                  PublicKeyCredentialSource,
+        cont:                    Continuation<PublicKeyCredentialSource>
+    ) {
+        if (requireUserVerification) {
+
+            if (isFingerprintAvailable()) {
+
+                showBiometricPrompt(biometricPromptSelectKeyTitle, source, cont)
+
+            } else {
+
+                // TODO fallback
+                // Passcode with Keyguard manager
+                cont.resumeWithException(CancelledException())
+            }
+
+        } else {
+
+            cont.resume(source)
+
+        }
     }
 
     private fun isFingerprintAvailable(): Boolean {

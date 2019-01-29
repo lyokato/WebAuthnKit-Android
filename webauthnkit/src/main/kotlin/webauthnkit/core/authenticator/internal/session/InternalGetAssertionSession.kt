@@ -66,11 +66,13 @@ class InternalGetAssertionSession(
             }
 
             val cred = try {
+                WAKLogger.d(TAG, "request user selection")
                 ui.requestUserSelection(
                     sources                 = sources,
                     requireUserVerification = requireUserVerification
                 )
             } catch (e: Exception) {
+                WAKLogger.d(TAG, "failed to select $e")
                 // TODO classify error
                 stop(ErrorReason.Cancelled)
                 return@launch
@@ -79,9 +81,14 @@ class InternalGetAssertionSession(
 
             cred.signCount = cred.signCount + setting.counterStep
 
+            WAKLogger.d(TAG, "update credential")
+
             if (!credentialStore.saveCredentialSource(cred)) {
+
+                WAKLogger.d(TAG, "failed to update credential")
                 stop(ErrorReason.Unknown)
                 return@launch
+
             }
 
             val extensions = HashMap<String, Any>()
@@ -118,9 +125,12 @@ class InternalGetAssertionSession(
                 return@launch
             }
 
+            val credentialId =
+                if (allowCredentialDescriptorList.size != 1) { cred.id } else { null }
+
             val assertion =
                 AuthenticatorAssertionResult(
-                    credentialId      = if (allowCredentialDescriptorList.size == 1) { cred.id } else { null },
+                    credentialId      = credentialId,
                     authenticatorData = authenticatorDataBytes,
                     signature         = signature,
                     userHandle        = cred.userHandle
