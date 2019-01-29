@@ -4,7 +4,6 @@ import androidx.fragment.app.FragmentActivity
 import com.fasterxml.jackson.annotation.JsonInclude
 import com.fasterxml.jackson.databind.ObjectMapper
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.serialization.ImplicitReflectionSerializer
 import webauthnkit.core.*
 
 import webauthnkit.core.authenticator.Authenticator
@@ -21,7 +20,6 @@ import webauthnkit.core.util.ByteArrayUtil
 
 @ExperimentalCoroutinesApi
 @ExperimentalUnsignedTypes
-@ImplicitReflectionSerializer
 class WebAuthnClient(
     val authenticator: Authenticator,
     private val origin:        String

@@ -3,7 +3,6 @@ package webauthnkit.core.authenticator.internal.session
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
-import kotlinx.serialization.ImplicitReflectionSerializer
 
 import webauthnkit.core.*
 import webauthnkit.core.authenticator.AttestedCredentialData
@@ -20,7 +19,6 @@ import webauthnkit.core.util.ByteArrayUtil
 import java.util.*
 
 @ExperimentalCoroutinesApi
-@ImplicitReflectionSerializer
 @ExperimentalUnsignedTypes
 class InternalMakeCredentialSession(
     private val setting:           InternalAuthenticatorSetting,
@@ -91,7 +89,7 @@ class InternalMakeCredentialSession(
                     requireUserVerification = requireUserVerification
                 )
             } catch(e: Exception) {
-                WAKLogger.d(TAG, "makeCredential - requestUserConsent failure: ${e.message}")
+                WAKLogger.d(TAG, "makeCredential - requestUserConsent failure: $e")
                 // TODO classify error
                 stop(ErrorReason.Cancelled)
                 return@launch

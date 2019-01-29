@@ -47,10 +47,9 @@ class UserConsentUI(
         val TAG = UserConsentUI::class.simpleName
     }
 
-    var biometricPromptTitle         = "Title"
-    var biometricPromptSubtitle      = "Subtitle"
-    var biometricPromptDescription   = "Description"
-    var biometricNegativeButtonTitle = "Cancel"
+    var biometricPromptCreateKeyTitle   = "Create key?"
+    var biometricPromptSelectKeyTitle   = "Use this key?"
+    var biometricPromptCancelButtonText = "CANCEL"
 
     private val executor = Executors.newSingleThreadExecutor()
 
@@ -65,107 +64,48 @@ class UserConsentUI(
         activity.runOnUiThread {
 
             WAKLogger.d(TAG, "requestUserConsent switched to UI thread")
-            // TODO
-            // let user to confirm site information and create key name
 
-            val newKeyName = userEntity.displayName
+            val dialog = RegistrationConfirmationDialog(
+                activity   = activity,
+                rpEntity   = rpEntity,
+                userEntity = userEntity
+            )
 
-            if (requireUserVerification) {
+            dialog.listener = object : RegistrationConfirmationDialogInterface {
 
-                if (isFingerprintAvailable()) {
+                override fun onCreate(keyName: String) {
 
-                    showBiometricPrompt(newKeyName, cont)
+                    if (requireUserVerification) {
 
-                } else {
+                        if (isFingerprintAvailable()) {
 
-                    // TODO fallback
-                    // Passcode with Keyguard manager
-                    cont.resumeWithException(CancelledException())
+                            showBiometricPrompt(biometricPromptCreateKeyTitle, keyName, cont)
+
+                        } else {
+
+                            // TODO fallback
+                            // Passcode with Keyguard manager
+                            cont.resumeWithException(CancelledException())
+
+                        }
+
+                    } else {
+
+                        cont.resume(keyName)
+
+                    }
 
                 }
 
-            } else {
+                override fun onCancel() {
 
-                showConfirmationDialog(rpEntity, userEntity)
-                //cont.resume(newKeyName)
+                    cont.resumeWithException(CancelledException())
 
+                }
             }
 
+            dialog.show()
         }
-    }
-
-    private fun showConfirmationDialog(
-        rpEntity:   PublicKeyCredentialRpEntity,
-        userEntity: PublicKeyCredentialUserEntity
-    ) {
-
-        val dialog = Dialog(activity)
-
-        dialog.requestWindowFeature(Window.FEATURE_NO_TITLE)
-
-        dialog.window!!.setFlags(
-            WindowManager.LayoutParams.FLAG_FULLSCREEN,
-            WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN
-        )
-
-        dialog.window!!.setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
-
-        dialog.setContentView(R.layout.webauthn_registration_conformation_dialog)
-
-        dialog.findViewById<TextView>(R.id.webauthn_registration_username).text = userEntity.displayName
-
-        val date = DateFormat.format("yyyyMMdd", Calendar.getInstance())
-        val defaultKeyName = "${userEntity.name}($date)"
-
-        dialog.findViewById<EditText>(R.id.webauthn_registration_key_name).setText(defaultKeyName)
-
-        val rpName = "[ ${rpEntity.name} ]"
-        dialog.findViewById<TextView>(R.id.webauthn_registration_rp).text = rpName
-
-        val userIconView = dialog.findViewById<ImageView>(R.id.webauthn_registration_user_icon)
-
-        userEntity.icon?.let {
-
-            val radius = activity.resources.getDimensionPixelSize(R.dimen.user_icon_radius)
-
-            val option= RequestOptions().let {
-
-                it.fitCenter()
-                it.transform(MultiTransformation(CenterCrop(), RoundedCorners(radius)))
-
-            }
-            Glide.with(activity)
-                .load(userEntity.icon)
-                .apply(option)
-                .into(userIconView)
-        }
-
-        val rpIconView = dialog.findViewById<ImageView>(R.id.webauthn_registration_rp_icon)
-
-        rpEntity.icon?.let {
-
-            val radius = activity.resources.getDimensionPixelSize(R.dimen.rp_icon_radius)
-
-            val option= RequestOptions().let {
-
-                it.fitCenter()
-                it.transform(MultiTransformation(CenterCrop(), RoundedCorners(radius)))
-            }
-
-            Glide.with(activity)
-                .load(rpEntity.icon)
-                .apply(option)
-                .into(rpIconView)
-        }
-
-        dialog.findViewById<Button>(R.id.webauthn_registration_confirmation_cancel_button).setOnClickListener {
-            dialog.dismiss()
-        }
-
-        dialog.findViewById<Button>(R.id.webauthn_registration_confirmation_ok_button).setOnClickListener {
-            dialog.dismiss()
-        }
-        dialog.show()
     }
 
     suspend fun requestUserSelection(
@@ -185,7 +125,7 @@ class UserConsentUI(
 
                 if (isFingerprintAvailable()) {
 
-                    showBiometricPrompt(selectedSource, cont)
+                    showBiometricPrompt(biometricPromptSelectKeyTitle, selectedSource, cont)
 
                 } else {
 
@@ -222,16 +162,16 @@ class UserConsentUI(
     }
 
     @TargetApi(Build.VERSION_CODES.M)
-    private fun <T> showBiometricPrompt(consentResult: T, cont: Continuation<T>) {
+    private fun <T> showBiometricPrompt(title: String, consentResult: T, cont: Continuation<T>) {
 
         WAKLogger.d(TAG, "showBiometricPrompt")
 
         val info =
             BiometricPrompt.PromptInfo.Builder()
-                .setTitle(biometricPromptTitle)
-                .setSubtitle(biometricPromptSubtitle)
-                .setDescription(biometricPromptDescription)
-                .setNegativeButtonText(biometricNegativeButtonTitle)
+                .setTitle(title)
+                //.setSubtitle(biometricPromptSubtitle)
+                //.setDescription(biometricPromptDescription)
+                .setNegativeButtonText(biometricPromptCancelButtonText)
                 .build()
 
         BiometricPrompt(activity, executor, object: BiometricPrompt.AuthenticationCallback() {

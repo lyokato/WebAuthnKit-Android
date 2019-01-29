@@ -6,15 +6,10 @@ import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity;
 import com.jaredrummler.materialspinner.MaterialSpinner
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.serialization.ImplicitReflectionSerializer
 import org.jetbrains.anko.*
 import org.jetbrains.anko.sdk27.coroutines.onClick
 import webauthnkit.core.*
 import webauthnkit.core.authenticator.COSEAlgorithmIdentifier
-import webauthnkit.core.authenticator.internal.CredentialStore
-import webauthnkit.core.authenticator.internal.InternalAuthenticator
-import webauthnkit.core.authenticator.internal.KeySupportChooser
-import webauthnkit.core.authenticator.internal.ui.UserConsentUI
 
 import webauthnkit.core.client.WebAuthnClient
 import webauthnkit.core.util.ByteArrayUtil
@@ -22,7 +17,6 @@ import webauthnkit.core.util.WAKLogger
 
 @ExperimentalCoroutinesApi
 @ExperimentalUnsignedTypes
-@ImplicitReflectionSerializer
 class RegistrationActivity : AppCompatActivity() {
 
     companion object {

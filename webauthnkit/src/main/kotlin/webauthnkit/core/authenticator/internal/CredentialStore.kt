@@ -5,12 +5,10 @@ import android.content.Context
 import android.database.sqlite.SQLiteDatabase
 import android.database.sqlite.SQLiteDatabase.CONFLICT_REPLACE
 import android.database.sqlite.SQLiteOpenHelper
-import kotlinx.serialization.ImplicitReflectionSerializer
 import webauthnkit.core.util.WAKLogger
 import webauthnkit.core.util.ByteArrayUtil
 import java.lang.Exception
 
-@ImplicitReflectionSerializer
 @ExperimentalUnsignedTypes
 class CredentialStore(context: Context) {
 

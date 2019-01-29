@@ -3,7 +3,6 @@ package webauthnkit.core.authenticator.internal.session
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
-import kotlinx.serialization.ImplicitReflectionSerializer
 
 import webauthnkit.core.ErrorReason
 import webauthnkit.core.PublicKeyCredentialDescriptor
@@ -22,7 +21,6 @@ import webauthnkit.core.util.WAKLogger
 import webauthnkit.core.util.ByteArrayUtil
 
 @ExperimentalCoroutinesApi
-@ImplicitReflectionSerializer
 @ExperimentalUnsignedTypes
 class InternalGetAssertionSession(
     private val setting:           InternalAuthenticatorSetting,

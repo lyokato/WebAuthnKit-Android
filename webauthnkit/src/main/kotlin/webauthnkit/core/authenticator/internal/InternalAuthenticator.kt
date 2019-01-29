@@ -1,7 +1,6 @@
 package webauthnkit.core.authenticator.internal
 
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.serialization.ImplicitReflectionSerializer
 
 import webauthnkit.core.AuthenticatorAttachment
 import webauthnkit.core.AuthenticatorTransport
@@ -22,7 +21,6 @@ class InternalAuthenticatorSetting {
 }
 
 @ExperimentalCoroutinesApi
-@ImplicitReflectionSerializer
 @ExperimentalUnsignedTypes
 class InternalAuthenticator(
     private val ui:                UserConsentUI,

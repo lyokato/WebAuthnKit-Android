@@ -6,7 +6,6 @@ import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity;
 import com.jaredrummler.materialspinner.MaterialSpinner
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.serialization.ImplicitReflectionSerializer
 import org.jetbrains.anko.*
 import org.jetbrains.anko.sdk27.coroutines.onClick
 import webauthnkit.core.AuthenticatorTransport
@@ -14,17 +13,12 @@ import webauthnkit.core.GetAssertionResponse
 import webauthnkit.core.PublicKeyCredentialRequestOptions
 
 import webauthnkit.core.UserVerificationRequirement
-import webauthnkit.core.authenticator.internal.CredentialStore
-import webauthnkit.core.authenticator.internal.InternalAuthenticator
-import webauthnkit.core.authenticator.internal.KeySupportChooser
-import webauthnkit.core.authenticator.internal.ui.UserConsentUI
 import webauthnkit.core.client.WebAuthnClient
 import webauthnkit.core.util.ByteArrayUtil
 import webauthnkit.core.util.WAKLogger
 
 @ExperimentalCoroutinesApi
 @ExperimentalUnsignedTypes
-@ImplicitReflectionSerializer
 class AuthenticationActivity : AppCompatActivity() {
 
     companion object {
