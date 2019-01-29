@@ -33,7 +33,7 @@ object WAKLogger {
     }
 
     private fun wrapMessage(klass: String, msg: String): String {
-        return "<$klass> $msg"
+        return "[$klass] $msg"
     }
 
 }
