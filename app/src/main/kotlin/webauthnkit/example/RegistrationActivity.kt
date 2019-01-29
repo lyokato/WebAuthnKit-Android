@@ -231,22 +231,39 @@ class RegistrationActivity : AppCompatActivity() {
         }
     }
 
-    private suspend fun onExecute(userId: String, username: String, userDisplayName: String,
-                          userIconURL: String, relyingParty: String, relyingPartyICON: String,
-                          challenge: String, userVerification: UserVerificationRequirement,
-                          attestationConveyance: AttestationConveyancePreference) {
+    val webAuthnClient = WebAuthnClient.internal(
+        activity = this,
+        origin   = "https://example.org"
+    )
+
+    private suspend fun onExecute(
+        userId:                String,
+        username:              String,
+        userDisplayName:       String,
+        userIconURL:           String,
+        relyingParty:          String,
+        relyingPartyICON:      String,
+        challenge:             String,
+        userVerification:      UserVerificationRequirement,
+        attestationConveyance: AttestationConveyancePreference
+    ) {
 
         val options = PublicKeyCredentialCreationOptions()
-        options.challenge = ByteArrayUtil.fromHex(challenge)
-        options.user.id = userId
-        options.user.name = username
+
+        options.challenge        = ByteArrayUtil.fromHex(challenge)
+        options.user.id          = userId
+        options.user.name        = username
         options.user.displayName = userDisplayName
-        options.user.icon = userIconURL
-        options.rp.id = relyingParty
-        options.rp.name = relyingParty
-        options.rp.icon = relyingPartyICON
-        options.attestation = attestationConveyance
-        options.addPubKeyCredParam(alg = COSEAlgorithmIdentifier.es256)
+        options.user.icon        = userIconURL
+        options.rp.id            = relyingParty
+        options.rp.name          = relyingParty
+        options.rp.icon          = relyingPartyICON
+        options.attestation      = attestationConveyance
+
+        options.addPubKeyCredParam(
+            alg = COSEAlgorithmIdentifier.es256
+        )
+
         options.authenticatorSelection = AuthenticatorSelectionCriteria(
             requireResidentKey = true,
             userVerification   = userVerification
@@ -254,8 +271,7 @@ class RegistrationActivity : AppCompatActivity() {
 
         try {
 
-            val client = createClient()
-            val cred = client.create(options)
+            val cred = webAuthnClient.create(options)
             WAKLogger.d(TAG, "CHALLENGE:" + ByteArrayUtil.encodeBase64URL(options.challenge))
             showResultActivity(cred)
 
@@ -282,23 +298,6 @@ class RegistrationActivity : AppCompatActivity() {
             intent.putExtra("CLIENT_JSON", cred.response.clientDataJSON)
             startActivity(intent)
         }
-    }
-
-    private fun createClient(): WebAuthnClient {
-
-        val ui = UserConsentUI(this)
-
-        val authenticator = InternalAuthenticator(
-            ui                = ui,
-            credentialStore   = CredentialStore(this),
-            keySupportChooser = KeySupportChooser(this)
-        )
-
-        return WebAuthnClient(
-            origin        = "https://example.org",
-            authenticator = authenticator
-        )
-
     }
 
 }

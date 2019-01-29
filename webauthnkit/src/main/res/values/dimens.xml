@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <dimen name="dialog_radius">10dp</dimen>
+    <dimen name="user_icon_radius">30dp</dimen>
+    <dimen name="rp_icon_radius">10dp</dimen>
+</resources>

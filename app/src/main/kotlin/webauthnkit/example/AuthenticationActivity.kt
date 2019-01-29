@@ -135,6 +135,11 @@ class AuthenticationActivity : AppCompatActivity() {
 
     }
 
+    val webAuthnClient = WebAuthnClient.internal(
+        activity = this,
+        origin   = "https://example.org"
+    )
+
     private suspend fun onExecute(relyingParty: String, challenge: String,
                           credId: String, userVerification: UserVerificationRequirement) {
 
@@ -151,8 +156,7 @@ class AuthenticationActivity : AppCompatActivity() {
 
         try {
 
-            val client = createClient()
-            val cred = client.get(options)
+            val cred = webAuthnClient.get(options)
             WAKLogger.d(TAG, "CHALLENGE:" + ByteArrayUtil.encodeBase64URL(options.challenge))
             showResultActivity(cred)
 
@@ -183,22 +187,4 @@ class AuthenticationActivity : AppCompatActivity() {
             startActivity(intent)
         }
     }
-
-    private fun createClient(): WebAuthnClient {
-
-        val ui = UserConsentUI(this)
-
-        val authenticator = InternalAuthenticator(
-            ui                = ui,
-            credentialStore   = CredentialStore(this),
-            keySupportChooser = KeySupportChooser(this)
-        )
-
-        return WebAuthnClient(
-            origin        = "https://example.org",
-            authenticator = authenticator
-        )
-
-    }
-
 }

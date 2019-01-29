@@ -1,5 +1,6 @@
 package webauthnkit.core.client
 
+import androidx.fragment.app.FragmentActivity
 import com.fasterxml.jackson.annotation.JsonInclude
 import com.fasterxml.jackson.databind.ObjectMapper
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -7,6 +8,10 @@ import kotlinx.serialization.ImplicitReflectionSerializer
 import webauthnkit.core.*
 
 import webauthnkit.core.authenticator.Authenticator
+import webauthnkit.core.authenticator.internal.CredentialStore
+import webauthnkit.core.authenticator.internal.InternalAuthenticator
+import webauthnkit.core.authenticator.internal.KeySupportChooser
+import webauthnkit.core.authenticator.internal.ui.UserConsentUI
 import webauthnkit.core.client.operation.CreateOperation
 import webauthnkit.core.client.operation.GetOperation
 import webauthnkit.core.client.operation.OperationListener
@@ -18,12 +23,31 @@ import webauthnkit.core.util.ByteArrayUtil
 @ExperimentalUnsignedTypes
 @ImplicitReflectionSerializer
 class WebAuthnClient(
-    private val authenticator: Authenticator,
+    val authenticator: Authenticator,
     private val origin:        String
 ): OperationListener {
 
     companion object {
         val TAG = WebAuthnClient::class.simpleName
+
+        fun internal(
+            activity: FragmentActivity,
+            origin:   String,
+            ui:       UserConsentUI = UserConsentUI(activity)
+        ): WebAuthnClient {
+
+            val authenticator = InternalAuthenticator(
+                ui                = ui,
+                credentialStore   = CredentialStore(activity),
+                keySupportChooser = KeySupportChooser(activity)
+            )
+
+            return WebAuthnClient(
+                origin        = origin,
+                authenticator = authenticator
+            )
+
+        }
     }
 
     var defaultTimeout: Long = 60

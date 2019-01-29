@@ -211,7 +211,6 @@ class GetOperation(
     private fun stop(reason: ErrorReason) {
         WAKLogger.d(TAG, "stop")
         stopInternal(reason)
-        WAKLogger.d(TAG, "stop-2")
         dispatchError(reason)
     }
 
