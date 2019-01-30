@@ -1,5 +1,6 @@
 package webauthnkit.core.authenticator.internal.ui
 
+import android.annotation.SuppressLint
 import android.annotation.TargetApi
 import android.app.Activity.RESULT_OK
 import android.app.KeyguardManager
@@ -7,6 +8,8 @@ import android.content.Context.KEYGUARD_SERVICE
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
+import android.os.Handler
+import android.os.Looper
 import androidx.biometric.BiometricPrompt
 import androidx.fragment.app.FragmentActivity
 
@@ -19,13 +22,10 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import webauthnkit.core.*
 
 import webauthnkit.core.authenticator.internal.PublicKeyCredentialSource
-import webauthnkit.core.authenticator.internal.ui.dialog.DefaultRegistrationConfirmationDialog
-import webauthnkit.core.authenticator.internal.ui.dialog.DefaultSelectionConfirmationDialog
-import webauthnkit.core.authenticator.internal.ui.dialog.RegistrationConfirmationDialogListener
-import webauthnkit.core.authenticator.internal.ui.dialog.SelectionConfirmationDialogListener
+import webauthnkit.core.authenticator.internal.ui.dialog.*
 import webauthnkit.core.util.WAKLogger
-
-import java.util.concurrent.Executors
+import java.util.*
+import java.util.concurrent.Executor
 
 interface KeyguardResultListener {
     fun onAuthenticated()
@@ -35,7 +35,9 @@ interface KeyguardResultListener {
 @ExperimentalUnsignedTypes
 @ExperimentalCoroutinesApi
 object UserConsentUIFactory {
+    val TAG = UserConsentUIFactory::class.simpleName
     fun create(activity: FragmentActivity): UserConsentUI {
+        WAKLogger.d(TAG, "create")
         return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             DefaultUserConsentUI(activity)
         } else {
@@ -76,10 +78,13 @@ interface UserConsentUI {
 class DefaultUserConsentUI(
     private val activity: FragmentActivity
 ): UserConsentUI {
+
     companion object {
         val TAG = DefaultUserConsentUI::class.simpleName
         const val REQUEST_CODE = 6749
     }
+
+    val uuid = UUID.randomUUID().toString()
 
     var keyguardResultListener: KeyguardResultListener? = null
 
@@ -88,9 +93,9 @@ class DefaultUserConsentUI(
     var biometricPromptCancelButtonText = "CANCEL"
 
     var alwaysShowKeySelection: Boolean = false
-    var preferBiometricPrompt: Boolean = true
+    var preferBiometricPrompt: Boolean = false
 
-    private val executor = Executors.newSingleThreadExecutor()
+    private val executor = MainThreadExecutor()
 
     override var isOpen: Boolean = false
         private set
@@ -100,10 +105,13 @@ class DefaultUserConsentUI(
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?): Boolean {
         WAKLogger.d(TAG, "onActivityResult")
         return if (requestCode == REQUEST_CODE) {
+            WAKLogger.d(TAG, "This is my result: $uuid")
             if (resultCode == RESULT_OK) {
-                keyguardResultListener?.onAuthenticated()
+                WAKLogger.d(TAG, "OK")
+                keyguardResultListener!!.onAuthenticated()
             } else {
-                keyguardResultListener?.onFailed()
+                WAKLogger.d(TAG, "Failed")
+                keyguardResultListener!!.onFailed()
             }
             keyguardResultListener = null
             true
@@ -118,6 +126,7 @@ class DefaultUserConsentUI(
     }
 
     private fun <T> finish(cont: Continuation<T>, result: T) {
+        WAKLogger.d(TAG, "finish: $uuid")
         isOpen = false
         if (cancelled != null) {
             cont.resumeWithException(cancelled!!.rawValue)
@@ -127,6 +136,7 @@ class DefaultUserConsentUI(
     }
 
     private fun <T> fail(cont: Continuation<T>) {
+        WAKLogger.d(TAG, "fail: $uuid")
         isOpen = false
         if (cancelled != null) {
             cont.resumeWithException(cancelled!!.rawValue)
@@ -153,6 +163,7 @@ class DefaultUserConsentUI(
 
             WAKLogger.d(TAG, "requestUserConsent switched to UI thread")
 
+            // TODO make this configurable
             val dialog = DefaultRegistrationConfirmationDialog()
             dialog.show(activity, rpEntity, userEntity, object :
                 RegistrationConfirmationDialogListener {
@@ -259,6 +270,8 @@ class DefaultUserConsentUI(
         } else {
             WAKLogger.d(TAG, "keyguard is secure")
 
+            WAKLogger.d(TAG, "keyguard listener: $uuid")
+
             keyguardResultListener = object : KeyguardResultListener {
 
                 override fun onAuthenticated() {
@@ -296,7 +309,7 @@ class DefaultUserConsentUI(
         BiometricPrompt(activity, executor, object: BiometricPrompt.AuthenticationCallback() {
 
             override fun onAuthenticationSucceeded(result: BiometricPrompt.AuthenticationResult) {
-                WAKLogger.d(TAG, "authentication success")
+                WAKLogger.d(TAG, "authentication success $uuid")
                 finish(cont, consentResult)
             }
 
@@ -305,14 +318,62 @@ class DefaultUserConsentUI(
                 fail(cont)
             }
 
+            @SuppressLint("SwitchIntDef")
             override fun onAuthenticationError(code: Int, msg: CharSequence) {
-                WAKLogger.w(TAG, "authentication error $code: $msg")
-                // TODO when(code)
-                //cont.resumeWithException(UnknownException())
-                showKeyguard(cont, consentResult)
+                WAKLogger.w(TAG, "authentication error $uuid - $code: $msg")
+                // TODO make these message configurable
+                // show ErrorReasonDialog except for USER_CANCELED
+                val reason = when(code) {
+                    BiometricPrompt.ERROR_USER_CANCELED     -> "USER_CANCELED"
+                    BiometricPrompt.ERROR_CANCELED          -> "CANCELED"
+                    BiometricPrompt.ERROR_HW_NOT_PRESENT    -> "HW_NOT_PRESENT"
+                    BiometricPrompt.ERROR_HW_UNAVAILABLE    -> "HW_UNAVAILABLE"
+                    BiometricPrompt.ERROR_LOCKOUT           -> "LOCKOUT"
+                    BiometricPrompt.ERROR_LOCKOUT_PERMANENT -> "LOCKOUT_PERMANENT"
+                    BiometricPrompt.ERROR_NEGATIVE_BUTTON   -> "NEGATIVE_BUTTON"
+                    BiometricPrompt.ERROR_NO_BIOMETRICS     -> "NO_BIOMETRICS"
+                    BiometricPrompt.ERROR_NO_SPACE          -> "NO_SPACE"
+                    BiometricPrompt.ERROR_TIMEOUT           -> "TIMEOUT"
+                    BiometricPrompt.ERROR_UNABLE_TO_PROCESS -> "UNABLE_TO_PROCESS"
+                    BiometricPrompt.ERROR_VENDOR            -> "VENDOR"
+                    else -> "UNKNOWN"
+                }
+                fail(cont)
+                //showKeyguardFallbackDialog(reason, cont, consentResult)
             }
 
         }).authenticate(info)
 
+    }
+
+    private fun <T> showKeyguardFallbackDialog(reason: String, cont: Continuation<T>, consentResult: T) {
+
+        WAKLogger.d(TAG, "showKeyguardFallbackDialog $uuid")
+
+        activity.runOnUiThread {
+
+            val dialog = KeyguardFallbackDialog()
+            dialog.show(activity, reason, object :
+                KeyguardFallbackDialogListener {
+
+                override fun onRequest() {
+                    showKeyguard(cont, consentResult)
+                }
+
+                override fun onCancel() {
+                    fail(cont)
+                }
+
+            })
+        }
+    }
+
+    inner class MainThreadExecutor : Executor {
+
+        private val handler = Handler(Looper.getMainLooper())
+
+        override fun execute(runnable: Runnable) {
+            handler.post(runnable)
+        }
     }
 }

@@ -18,6 +18,7 @@ import webauthnkit.core.authenticator.internal.ui.UserConsentUIFactory
 import webauthnkit.core.client.WebAuthnClient
 import webauthnkit.core.util.ByteArrayUtil
 import webauthnkit.core.util.WAKLogger
+import java.util.*
 
 @ExperimentalCoroutinesApi
 @ExperimentalUnsignedTypes
@@ -27,7 +28,10 @@ class AuthenticationActivity : AppCompatActivity() {
         private val TAG = AuthenticationActivity::class.simpleName
     }
 
+    val uuid = UUID.randomUUID().toString()
+
     override fun onCreate(savedInstanceState: Bundle?) {
+        WAKLogger.d(TAG, "onCreate: $uuid")
         super.onCreate(savedInstanceState)
 
         val userVerificationOptions = listOf("Required", "Preferred", "Discouraged")
@@ -133,7 +137,9 @@ class AuthenticationActivity : AppCompatActivity() {
 
     private fun createWebAuthnClient(): WebAuthnClient {
 
+
         consentUI = UserConsentUIFactory.create(this)
+        WAKLogger.d(TAG, "create consentUI===========================================")
 
         val webAuthnClient = WebAuthnClient.internal(
             activity = this,
@@ -145,6 +151,7 @@ class AuthenticationActivity : AppCompatActivity() {
     }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        WAKLogger.d(TAG, "onActivityResult: $uuid")
         consentUI?.onActivityResult(requestCode, resultCode, data)
         /*
         if (consentUI != null && consentUI!!.onActivityResult(requestCode, resultCode, data)) {
@@ -158,6 +165,7 @@ class AuthenticationActivity : AppCompatActivity() {
     private suspend fun onExecute(relyingParty: String, challenge: String,
                           credId: String, userVerification: UserVerificationRequirement) {
 
+        WAKLogger.d(TAG, "onExecute: $uuid")
         val options = PublicKeyCredentialRequestOptions()
         options.challenge        = ByteArrayUtil.fromHex(challenge)
         options.rpId             = relyingParty
@@ -182,7 +190,11 @@ class AuthenticationActivity : AppCompatActivity() {
             WAKLogger.w(TAG, "failed to get")
             showErrorPopup(e.toString())
 
+        } finally {
+            consentUI = null
         }
+
+        WAKLogger.d(TAG, "onExecuteCompleted: $uuid")
 
     }
 
