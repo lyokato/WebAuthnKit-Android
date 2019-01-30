@@ -22,27 +22,36 @@ import webauthnkit.core.R
 import webauthnkit.core.util.WAKLogger
 import java.util.*
 
-interface RegistrationConfirmationDialogInterface {
+interface RegistrationConfirmationDialogListener {
     fun onCreate(keyName: String)
     fun onCancel()
 }
 
-class RegistrationConfirmationDialog(
-    private val activity:   FragmentActivity,
-    private val rpEntity:   PublicKeyCredentialRpEntity,
-    private val userEntity: PublicKeyCredentialUserEntity,
-    private val dialog:     Dialog = Dialog(activity)
-) {
+interface RegistrationConfirmationDialog {
+    fun show(
+        activity:   FragmentActivity,
+        rpEntity:   PublicKeyCredentialRpEntity,
+        userEntity: PublicKeyCredentialUserEntity,
+        listener:   RegistrationConfirmationDialogListener
+    )
+}
+
+class DefaultRegistrationConfirmationDialog : RegistrationConfirmationDialog {
 
     companion object {
-        val TAG = RegistrationConfirmationDialog::class.simpleName
+        val TAG = DefaultRegistrationConfirmationDialog::class.simpleName
     }
 
-    var listener: RegistrationConfirmationDialogInterface? = null
-
-    fun show() {
+    override fun show(
+        activity:   FragmentActivity,
+        rpEntity:   PublicKeyCredentialRpEntity,
+        userEntity: PublicKeyCredentialUserEntity,
+        listener:   RegistrationConfirmationDialogListener
+    ) {
 
         WAKLogger.d(TAG, "show")
+
+        val dialog = Dialog(activity)
 
         dialog.requestWindowFeature(Window.FEATURE_NO_TITLE)
         dialog.setCanceledOnTouchOutside(false)
@@ -56,7 +65,7 @@ class RegistrationConfirmationDialog(
 
         dialog.findViewById<TextView>(R.id.webauthn_registration_username).text = userEntity.displayName
 
-        val defaultKeyName = getDefaultKeyName()
+        val defaultKeyName = getDefaultKeyName(userEntity.name)
 
         val keyNameField = dialog.findViewById<EditText>(R.id.webauthn_registration_key_name)
         keyNameField.setText(defaultKeyName)
@@ -104,7 +113,7 @@ class RegistrationConfirmationDialog(
         dialog.findViewById<Button>(R.id.webauthn_registration_confirmation_cancel_button).setOnClickListener {
             WAKLogger.d(TAG, "cancel clicked")
             dialog.dismiss()
-            listener?.onCancel()
+            listener.onCancel()
         }
 
         dialog.findViewById<Button>(R.id.webauthn_registration_confirmation_ok_button).setOnClickListener {
@@ -112,18 +121,18 @@ class RegistrationConfirmationDialog(
             val keyName = keyNameField.text.toString()
             dialog.dismiss()
             if (keyName.isEmpty()) {
-                listener?.onCreate(getDefaultKeyName())
+                listener.onCreate(getDefaultKeyName(userEntity.name))
             } else {
-                listener?.onCreate(keyName)
+                listener.onCreate(keyName)
             }
         }
 
         dialog.show()
     }
 
-    private fun getDefaultKeyName(): String {
+    private fun getDefaultKeyName(username: String): String {
         val date = DateFormat.format("yyyyMMdd", Calendar.getInstance())
-        return "${userEntity.name}($date)"
+        return "${username}($date)"
     }
 
 }

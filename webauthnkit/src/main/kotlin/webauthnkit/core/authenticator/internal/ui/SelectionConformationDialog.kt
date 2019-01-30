@@ -14,25 +14,33 @@ import webauthnkit.core.authenticator.internal.PublicKeyCredentialSource
 import webauthnkit.core.util.WAKLogger
 
 @ExperimentalUnsignedTypes
-interface SelectionConfirmationDialogInterface {
+interface SelectionConfirmationDialogListener {
     fun onSelect(source: PublicKeyCredentialSource)
     fun onCancel()
 }
 
 @ExperimentalUnsignedTypes
-class SelectionConformationDialog(
-    private val activity: FragmentActivity,
-    private val sources:  List<PublicKeyCredentialSource>,
-    private val dialog: Dialog = Dialog(activity)
-) {
+interface SelectionConfirmationDialog {
+    fun show(
+        activity: FragmentActivity,
+        sources:  List<PublicKeyCredentialSource>,
+        listener: SelectionConfirmationDialogListener
+    )
+}
+
+@ExperimentalUnsignedTypes
+class DefaultSelectionConfirmationDialog: SelectionConfirmationDialog {
 
     companion object {
-       val TAG = SelectionConformationDialog::class.simpleName
+       val TAG = DefaultSelectionConfirmationDialog::class.simpleName
     }
 
-    var listener: SelectionConfirmationDialogInterface? = null
-
-    fun show() {
+    override fun show(
+        activity: FragmentActivity,
+        sources:  List<PublicKeyCredentialSource>,
+        listener: SelectionConfirmationDialogListener
+    ) {
+        val dialog = Dialog(activity)
 
         dialog.requestWindowFeature(Window.FEATURE_NO_TITLE)
         dialog.setCanceledOnTouchOutside(false)
@@ -52,17 +60,17 @@ class SelectionConformationDialog(
         dialog.window!!.setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
 
         dialog.findViewById<Button>(R.id.webauthn_selection_confirmation_cancel_button).setOnClickListener {
-            WAKLogger.d(RegistrationConfirmationDialog.TAG, "cancel clicked")
+            WAKLogger.d(TAG, "cancel clicked")
             dialog.dismiss()
-            listener?.onCancel()
+            listener.onCancel()
         }
 
         dialog.findViewById<Button>(R.id.webauthn_selection_confirmation_ok_button).setOnClickListener {
-            WAKLogger.d(RegistrationConfirmationDialog.TAG, "select clicked")
+            WAKLogger.d(TAG, "select clicked")
             val selected = sources[spinner.selectedItemPosition]
             WAKLogger.w(TAG, "SELECTED ${selected.otherUI}")
             dialog.dismiss()
-            listener?.onSelect(selected)
+            listener.onSelect(selected)
         }
 
         dialog.show()

@@ -13,6 +13,7 @@ import webauthnkit.core.GetAssertionResponse
 import webauthnkit.core.PublicKeyCredentialRequestOptions
 
 import webauthnkit.core.UserVerificationRequirement
+import webauthnkit.core.authenticator.internal.ui.UserConsentUI
 import webauthnkit.core.client.WebAuthnClient
 import webauthnkit.core.util.ByteArrayUtil
 import webauthnkit.core.util.WAKLogger
@@ -129,10 +130,29 @@ class AuthenticationActivity : AppCompatActivity() {
 
     }
 
-    val webAuthnClient = WebAuthnClient.internal(
-        activity = this,
-        origin   = "https://example.org"
-    )
+    private fun createWebAuthnClient(): WebAuthnClient {
+
+        consentUI = UserConsentUI(this)
+
+        val webAuthnClient = WebAuthnClient.internal(
+            activity = this,
+            origin   = "https://example.org",
+            ui       = consentUI!!
+        )
+
+        return webAuthnClient
+    }
+
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        consentUI?.onActivityResult(requestCode, resultCode, data)
+        /*
+        if (consentUI != null && consentUI!!.onActivityResult(requestCode, resultCode, data)) {
+            return
+        }
+        */
+    }
+
+    var consentUI: UserConsentUI? = null
 
     private suspend fun onExecute(relyingParty: String, challenge: String,
                           credId: String, userVerification: UserVerificationRequirement) {
@@ -147,6 +167,8 @@ class AuthenticationActivity : AppCompatActivity() {
                 credentialId = ByteArrayUtil.fromHex(credId),
                 transports   = mutableListOf(AuthenticatorTransport.Internal))
         }
+
+        val webAuthnClient = createWebAuthnClient()
 
         try {
 

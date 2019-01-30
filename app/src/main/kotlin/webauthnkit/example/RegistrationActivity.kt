@@ -10,6 +10,7 @@ import org.jetbrains.anko.*
 import org.jetbrains.anko.sdk27.coroutines.onClick
 import webauthnkit.core.*
 import webauthnkit.core.authenticator.COSEAlgorithmIdentifier
+import webauthnkit.core.authenticator.internal.ui.UserConsentUI
 
 import webauthnkit.core.client.WebAuthnClient
 import webauthnkit.core.util.ByteArrayUtil
@@ -223,12 +224,32 @@ class RegistrationActivity : AppCompatActivity() {
 
             }
         }
+
     }
 
-    val webAuthnClient = WebAuthnClient.internal(
-        activity = this,
-        origin   = "https://example.org"
-    )
+    private fun createWebAuthnClient(): WebAuthnClient {
+
+        consentUI = UserConsentUI(this)
+
+        val webAuthnClient = WebAuthnClient.internal(
+            activity = this,
+            origin   = "https://example.org",
+            ui       = consentUI!!
+        )
+
+        return webAuthnClient
+    }
+
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        consentUI?.onActivityResult(requestCode, resultCode, data)
+        /*
+        if (consentUI != null && consentUI!!.onActivityResult(requestCode, resultCode, data)) {
+            return
+        }
+        */
+    }
+
+    var consentUI: UserConsentUI? = null
 
     private suspend fun onExecute(
         userId:                String,
@@ -262,6 +283,8 @@ class RegistrationActivity : AppCompatActivity() {
             requireResidentKey = true,
             userVerification   = userVerification
         )
+
+        val webAuthnClient = createWebAuthnClient()
 
         try {
 
