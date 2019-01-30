@@ -88,10 +88,17 @@ class InternalMakeCredentialSession(
                     userEntity              = userEntity,
                     requireUserVerification = requireUserVerification
                 )
+            } catch(e: CancelledException) {
+                WAKLogger.d(TAG, "makeCredential - requestUserConsent failure: $e")
+                stop(ErrorReason.Cancelled)
+                return@launch
+            } catch(e: TimeoutException) {
+                WAKLogger.d(TAG, "makeCredential - requestUserConsent failure: $e")
+                stop(ErrorReason.Timeout)
+                return@launch
             } catch(e: Exception) {
                 WAKLogger.d(TAG, "makeCredential - requestUserConsent failure: $e")
-                // TODO classify error
-                stop(ErrorReason.Cancelled)
+                stop(ErrorReason.Unknown)
                 return@launch
             }
 
@@ -210,12 +217,11 @@ class InternalMakeCredentialSession(
             WAKLogger.d(TAG, "already stopped")
             return
         }
-        /* TODO cancel UI
-        if (ui.opened) {
-
+        if (ui.isOpen) {
+            WAKLogger.d(TAG, "UI is open")
+            ui.cancel(reason)
             return
         }
-        */
         stop(reason)
     }
 

@@ -19,6 +19,10 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import webauthnkit.core.*
 
 import webauthnkit.core.authenticator.internal.PublicKeyCredentialSource
+import webauthnkit.core.authenticator.internal.ui.dialog.DefaultRegistrationConfirmationDialog
+import webauthnkit.core.authenticator.internal.ui.dialog.DefaultSelectionConfirmationDialog
+import webauthnkit.core.authenticator.internal.ui.dialog.RegistrationConfirmationDialogListener
+import webauthnkit.core.authenticator.internal.ui.dialog.SelectionConfirmationDialogListener
 import webauthnkit.core.util.WAKLogger
 
 import java.util.concurrent.Executors
@@ -28,16 +32,52 @@ interface KeyguardResultListener {
     fun onFailed()
 }
 
+@ExperimentalUnsignedTypes
+@ExperimentalCoroutinesApi
+object UserConsentUIFactory {
+    fun create(activity: FragmentActivity): UserConsentUI {
+        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            DefaultUserConsentUI(activity)
+        } else {
+            DefaultUserConsentUI(activity)
+            //LegacyUserConsentUI(activity)
+        }
+    }
+}
+
+@ExperimentalUnsignedTypes
+@ExperimentalCoroutinesApi
+interface UserConsentUI {
+
+    val isOpen: Boolean
+
+    fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?): Boolean
+
+    fun cancel(reason: ErrorReason)
+
+    suspend fun requestUserConsent(
+        rpEntity:                PublicKeyCredentialRpEntity,
+        userEntity:              PublicKeyCredentialUserEntity,
+        requireUserVerification: Boolean
+    ): String
+
+    suspend fun requestUserSelection(
+        sources:                 List<PublicKeyCredentialSource>,
+        requireUserVerification: Boolean
+    ): PublicKeyCredentialSource
+
+}
+
 // TODO ConsentUI for Android 5
 
 @ExperimentalUnsignedTypes
 @ExperimentalCoroutinesApi
 @TargetApi(Build.VERSION_CODES.M)
-class UserConsentUI(
+class DefaultUserConsentUI(
     private val activity: FragmentActivity
-) {
+): UserConsentUI {
     companion object {
-        val TAG = UserConsentUI::class.simpleName
+        val TAG = DefaultUserConsentUI::class.simpleName
         const val REQUEST_CODE = 6749
     }
 
@@ -52,7 +92,12 @@ class UserConsentUI(
 
     private val executor = Executors.newSingleThreadExecutor()
 
-    fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?): Boolean {
+    override var isOpen: Boolean = false
+        private set
+
+    private var cancelled: ErrorReason? = null
+
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?): Boolean {
         WAKLogger.d(TAG, "onActivityResult")
         return if (requestCode == REQUEST_CODE) {
             if (resultCode == RESULT_OK) {
@@ -67,7 +112,34 @@ class UserConsentUI(
         }
     }
 
-    suspend fun requestUserConsent(
+    private fun onStartUserInteraction() {
+        isOpen = true
+        cancelled = null
+    }
+
+    private fun <T> finish(cont: Continuation<T>, result: T) {
+        isOpen = false
+        if (cancelled != null) {
+            cont.resumeWithException(cancelled!!.rawValue)
+        } else {
+            cont.resume(result)
+        }
+    }
+
+    private fun <T> fail(cont: Continuation<T>) {
+        isOpen = false
+        if (cancelled != null) {
+            cont.resumeWithException(cancelled!!.rawValue)
+        } else {
+            cont.resumeWithException(CancelledException())
+        }
+    }
+
+    override fun cancel(reason: ErrorReason) {
+        cancelled = reason
+    }
+
+    override suspend fun requestUserConsent(
         rpEntity:                PublicKeyCredentialRpEntity,
         userEntity:              PublicKeyCredentialUserEntity,
         requireUserVerification: Boolean
@@ -75,12 +147,15 @@ class UserConsentUI(
 
         WAKLogger.d(TAG, "requestUserConsent")
 
+        onStartUserInteraction()
+
         activity.runOnUiThread {
 
             WAKLogger.d(TAG, "requestUserConsent switched to UI thread")
 
             val dialog = DefaultRegistrationConfirmationDialog()
-            dialog.show(activity, rpEntity, userEntity, object : RegistrationConfirmationDialogListener{
+            dialog.show(activity, rpEntity, userEntity, object :
+                RegistrationConfirmationDialogListener {
 
                 override fun onCreate(keyName: String) {
                     if (requireUserVerification) {
@@ -90,12 +165,12 @@ class UserConsentUI(
                             showKeyguard(cont, keyName)
                         }
                     } else {
-                        cont.resume(keyName)
+                        finish(cont, keyName)
                     }
                 }
 
                 override fun onCancel() {
-                    cont.resumeWithException(CancelledException())
+                    fail(cont)
                 }
 
             })
@@ -103,12 +178,14 @@ class UserConsentUI(
         }
     }
 
-    suspend fun requestUserSelection(
+    override suspend fun requestUserSelection(
         sources:                 List<PublicKeyCredentialSource>,
         requireUserVerification: Boolean
     ): PublicKeyCredentialSource = suspendCoroutine { cont ->
 
         WAKLogger.d(TAG, "requestUserSelection")
+
+        onStartUserInteraction()
 
         activity.runOnUiThread {
 
@@ -128,7 +205,8 @@ class UserConsentUI(
 
                 val dialog = DefaultSelectionConfirmationDialog()
 
-                dialog.show(activity, sources, object : SelectionConfirmationDialogListener {
+                dialog.show(activity, sources, object :
+                    SelectionConfirmationDialogListener {
 
                     override fun onSelect(source: PublicKeyCredentialSource) {
                         WAKLogger.d(TAG, "selected")
@@ -141,7 +219,7 @@ class UserConsentUI(
 
                     override fun onCancel() {
                         WAKLogger.d(TAG, "canceled")
-                        cont.resumeWithException(CancelledException())
+                        fail(cont)
                     }
                 })
 
@@ -161,7 +239,7 @@ class UserConsentUI(
                 showKeyguard(cont, source)
             }
         } else {
-            cont.resume(source)
+            finish(cont, source)
         }
     }
 
@@ -176,7 +254,7 @@ class UserConsentUI(
             WAKLogger.d(TAG, "keyguard is not secure")
 
             // TODO show error dialog
-            cont.resumeWithException(CancelledException())
+            fail(cont)
 
         } else {
             WAKLogger.d(TAG, "keyguard is secure")
@@ -184,12 +262,14 @@ class UserConsentUI(
             keyguardResultListener = object : KeyguardResultListener {
 
                 override fun onAuthenticated() {
-                    cont.resume(consentResult)
+                    WAKLogger.d(TAG, "keyguard authenticated")
+                    finish(cont, consentResult)
                 }
 
                 override fun onFailed() {
                     // TODO show error dialog
-                    cont.resumeWithException(CancelledException())
+                    WAKLogger.d(TAG, "failed keyguard authentication")
+                    fail(cont)
                 }
             }
 
@@ -217,16 +297,17 @@ class UserConsentUI(
 
             override fun onAuthenticationSucceeded(result: BiometricPrompt.AuthenticationResult) {
                 WAKLogger.d(TAG, "authentication success")
-                cont.resume(consentResult)
+                finish(cont, consentResult)
             }
 
             override fun onAuthenticationFailed() {
                 WAKLogger.d(TAG, "authentication failed")
-                cont.resumeWithException(CancelledException())
+                fail(cont)
             }
 
             override fun onAuthenticationError(code: Int, msg: CharSequence) {
                 WAKLogger.w(TAG, "authentication error $code: $msg")
+                // TODO when(code)
                 //cont.resumeWithException(UnknownException())
                 showKeyguard(cont, consentResult)
             }

@@ -11,6 +11,7 @@ import org.jetbrains.anko.sdk27.coroutines.onClick
 import webauthnkit.core.*
 import webauthnkit.core.authenticator.COSEAlgorithmIdentifier
 import webauthnkit.core.authenticator.internal.ui.UserConsentUI
+import webauthnkit.core.authenticator.internal.ui.UserConsentUIFactory
 
 import webauthnkit.core.client.WebAuthnClient
 import webauthnkit.core.util.ByteArrayUtil
@@ -229,13 +230,16 @@ class RegistrationActivity : AppCompatActivity() {
 
     private fun createWebAuthnClient(): WebAuthnClient {
 
-        consentUI = UserConsentUI(this)
+        consentUI = UserConsentUIFactory.create(this)
 
         val webAuthnClient = WebAuthnClient.internal(
             activity = this,
             origin   = "https://example.org",
             ui       = consentUI!!
         )
+
+        webAuthnClient.maxTimeout = 30
+        webAuthnClient.defaultTimeout = 20
 
         return webAuthnClient
     }

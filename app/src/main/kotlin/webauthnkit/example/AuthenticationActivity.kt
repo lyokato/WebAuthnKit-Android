@@ -14,6 +14,7 @@ import webauthnkit.core.PublicKeyCredentialRequestOptions
 
 import webauthnkit.core.UserVerificationRequirement
 import webauthnkit.core.authenticator.internal.ui.UserConsentUI
+import webauthnkit.core.authenticator.internal.ui.UserConsentUIFactory
 import webauthnkit.core.client.WebAuthnClient
 import webauthnkit.core.util.ByteArrayUtil
 import webauthnkit.core.util.WAKLogger
@@ -132,7 +133,7 @@ class AuthenticationActivity : AppCompatActivity() {
 
     private fun createWebAuthnClient(): WebAuthnClient {
 
-        consentUI = UserConsentUI(this)
+        consentUI = UserConsentUIFactory.create(this)
 
         val webAuthnClient = WebAuthnClient.internal(
             activity = this,

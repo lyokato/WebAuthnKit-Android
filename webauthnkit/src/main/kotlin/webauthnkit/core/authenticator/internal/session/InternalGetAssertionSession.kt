@@ -3,11 +3,8 @@ package webauthnkit.core.authenticator.internal.session
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
+import webauthnkit.core.*
 
-import webauthnkit.core.ErrorReason
-import webauthnkit.core.PublicKeyCredentialDescriptor
-import webauthnkit.core.AuthenticatorAttachment
-import webauthnkit.core.AuthenticatorTransport
 import webauthnkit.core.authenticator.AuthenticatorAssertionResult
 import webauthnkit.core.authenticator.AuthenticatorData
 import webauthnkit.core.authenticator.GetAssertionSession
@@ -71,10 +68,17 @@ class InternalGetAssertionSession(
                     sources                 = sources,
                     requireUserVerification = requireUserVerification
                 )
+            } catch (e: CancelledException) {
+                WAKLogger.d(TAG, "failed to select $e")
+                stop(ErrorReason.Cancelled)
+                return@launch
+            } catch (e: TimeoutException) {
+                WAKLogger.d(TAG, "failed to select $e")
+                stop(ErrorReason.Timeout)
+                return@launch
             } catch (e: Exception) {
                 WAKLogger.d(TAG, "failed to select $e")
-                // TODO classify error
-                stop(ErrorReason.Cancelled)
+                stop(ErrorReason.Unknown)
                 return@launch
             }
 
@@ -168,12 +172,10 @@ class InternalGetAssertionSession(
             WAKLogger.d(TAG, "already stopped")
             return
         }
-        /* TODO cancel UI
-        if (ui.opened) {
-
+        if (ui.isOpen) {
+            ui.cancel(reason)
             return
         }
-        */
         stop(reason)
     }
 

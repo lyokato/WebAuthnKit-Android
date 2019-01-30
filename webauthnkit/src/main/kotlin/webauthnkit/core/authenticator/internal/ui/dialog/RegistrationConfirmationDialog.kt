@@ -1,4 +1,4 @@
-package webauthnkit.core.authenticator.internal.ui
+package webauthnkit.core.authenticator.internal.ui.dialog
 
 import android.app.Dialog
 import android.graphics.Color
@@ -32,11 +32,12 @@ interface RegistrationConfirmationDialog {
         activity:   FragmentActivity,
         rpEntity:   PublicKeyCredentialRpEntity,
         userEntity: PublicKeyCredentialUserEntity,
-        listener:   RegistrationConfirmationDialogListener
+        listener: RegistrationConfirmationDialogListener
     )
 }
 
-class DefaultRegistrationConfirmationDialog : RegistrationConfirmationDialog {
+class DefaultRegistrationConfirmationDialog :
+    RegistrationConfirmationDialog {
 
     companion object {
         val TAG = DefaultRegistrationConfirmationDialog::class.simpleName
@@ -46,7 +47,7 @@ class DefaultRegistrationConfirmationDialog : RegistrationConfirmationDialog {
         activity:   FragmentActivity,
         rpEntity:   PublicKeyCredentialRpEntity,
         userEntity: PublicKeyCredentialUserEntity,
-        listener:   RegistrationConfirmationDialogListener
+        listener: RegistrationConfirmationDialogListener
     ) {
 
         WAKLogger.d(TAG, "show")
@@ -132,7 +133,7 @@ class DefaultRegistrationConfirmationDialog : RegistrationConfirmationDialog {
 
     private fun getDefaultKeyName(username: String): String {
         val date = DateFormat.format("yyyyMMdd", Calendar.getInstance())
-        return "${username}($date)"
+        return "$username($date)"
     }
 
 }

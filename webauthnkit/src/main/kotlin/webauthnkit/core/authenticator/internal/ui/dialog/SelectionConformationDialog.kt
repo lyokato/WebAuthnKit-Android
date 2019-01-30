@@ -1,4 +1,4 @@
-package webauthnkit.core.authenticator.internal.ui
+package webauthnkit.core.authenticator.internal.ui.dialog
 
 import android.app.Dialog
 import android.graphics.Color
@@ -29,7 +29,8 @@ interface SelectionConfirmationDialog {
 }
 
 @ExperimentalUnsignedTypes
-class DefaultSelectionConfirmationDialog: SelectionConfirmationDialog {
+class DefaultSelectionConfirmationDialog:
+    SelectionConfirmationDialog {
 
     companion object {
        val TAG = DefaultSelectionConfirmationDialog::class.simpleName
