@@ -9,23 +9,25 @@ import android.widget.Button
 import android.widget.TextView
 import androidx.fragment.app.FragmentActivity
 import webauthnkit.core.R
+import webauthnkit.core.authenticator.internal.ui.UserConsentUIConfig
 import webauthnkit.core.util.WAKLogger
 
-interface KeyguardFallbackDialogListener {
-    fun onRequest()
-    fun onCancel()
+interface VerificationErrorDialogListener {
+    fun onComplete()
 }
 
-class KeyguardFallbackDialog(){
+class VerificationErrorDialog(
+   private val config: UserConsentUIConfig
+) {
 
     companion object {
-        val TAG = KeyguardFallbackDialog::class.simpleName
+        val TAG = VerificationErrorDialog::class.simpleName
     }
 
     fun show(
         activity: FragmentActivity,
         reason:   String,
-        listener: KeyguardFallbackDialogListener
+        listener: VerificationErrorDialogListener
     ) {
 
         WAKLogger.d(TAG, "show")
@@ -40,20 +42,16 @@ class KeyguardFallbackDialog(){
             WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN
         )
 
-        dialog.setContentView(R.layout.webauthn_keyguard_fallback_dialog)
+        dialog.setContentView(R.layout.webauthn_verification_error_dialog)
 
-        dialog.findViewById<TextView>(R.id.webauthn_keyguard_fallback_reason).text = reason
+        dialog.findViewById<TextView>(R.id.webauthn_verification_error_title).text = config.errorDialogTitle
+        dialog.findViewById<TextView>(R.id.webauthn_verification_error_reason).text = reason
+        dialog.findViewById<Button>(R.id.webauthn_verification_error_ok_button).text = config.errorDialogOKButtonTet
 
-        dialog.findViewById<Button>(R.id.webauthn_keyguard_fallback_cancel_button).setOnClickListener {
-            WAKLogger.d(TAG, "cancel clicked")
+        dialog.findViewById<Button>(R.id.webauthn_verification_error_ok_button).setOnClickListener {
+            WAKLogger.d(TAG, "ok clicked")
             dialog.dismiss()
-            listener.onCancel()
-        }
-
-        dialog.findViewById<Button>(R.id.webauthn_keyguard_fallback_ok_button).setOnClickListener {
-            WAKLogger.d(TAG, "request clicked")
-            dialog.dismiss()
-            listener.onRequest()
+            listener.onComplete()
         }
 
         dialog.show()

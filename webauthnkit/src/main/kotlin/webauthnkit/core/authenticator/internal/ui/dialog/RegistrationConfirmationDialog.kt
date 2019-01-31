@@ -19,6 +19,7 @@ import com.bumptech.glide.request.RequestOptions
 import webauthnkit.core.PublicKeyCredentialRpEntity
 import webauthnkit.core.PublicKeyCredentialUserEntity
 import webauthnkit.core.R
+import webauthnkit.core.authenticator.internal.ui.UserConsentUIConfig
 import webauthnkit.core.util.WAKLogger
 import java.util.*
 
@@ -36,8 +37,9 @@ interface RegistrationConfirmationDialog {
     )
 }
 
-class DefaultRegistrationConfirmationDialog :
-    RegistrationConfirmationDialog {
+class DefaultRegistrationConfirmationDialog(
+    private val config: UserConsentUIConfig
+): RegistrationConfirmationDialog {
 
     companion object {
         val TAG = DefaultRegistrationConfirmationDialog::class.simpleName
@@ -64,7 +66,11 @@ class DefaultRegistrationConfirmationDialog :
 
         dialog.setContentView(R.layout.webauthn_registration_conformation_dialog)
 
-        dialog.findViewById<TextView>(R.id.webauthn_registration_username).text = userEntity.displayName
+        dialog.findViewById<TextView>(R.id.webauthn_registration_confirmation_title).text =
+            config.registrationDialogTitle
+
+        dialog.findViewById<TextView>(R.id.webauthn_registration_username).text =
+            userEntity.displayName
 
         val defaultKeyName = getDefaultKeyName(userEntity.name)
 
@@ -111,11 +117,17 @@ class DefaultRegistrationConfirmationDialog :
                 .into(rpIconView)
         }
 
+        dialog.findViewById<Button>(R.id.webauthn_registration_confirmation_cancel_button).text =
+            config.registrationDialogCancelButtonText
+
         dialog.findViewById<Button>(R.id.webauthn_registration_confirmation_cancel_button).setOnClickListener {
             WAKLogger.d(TAG, "cancel clicked")
             dialog.dismiss()
             listener.onCancel()
         }
+
+        dialog.findViewById<Button>(R.id.webauthn_registration_confirmation_ok_button).text =
+            config.registrationDialogCreateButtonText
 
         dialog.findViewById<Button>(R.id.webauthn_registration_confirmation_ok_button).setOnClickListener {
             WAKLogger.d(TAG, "create clicked")

@@ -8,9 +8,11 @@ import android.view.WindowManager
 import android.widget.ArrayAdapter
 import android.widget.Button
 import android.widget.Spinner
+import android.widget.TextView
 import androidx.fragment.app.FragmentActivity
 import webauthnkit.core.R
 import webauthnkit.core.authenticator.internal.PublicKeyCredentialSource
+import webauthnkit.core.authenticator.internal.ui.UserConsentUIConfig
 import webauthnkit.core.util.WAKLogger
 
 @ExperimentalUnsignedTypes
@@ -29,8 +31,9 @@ interface SelectionConfirmationDialog {
 }
 
 @ExperimentalUnsignedTypes
-class DefaultSelectionConfirmationDialog:
-    SelectionConfirmationDialog {
+class DefaultSelectionConfirmationDialog(
+    private val config: UserConsentUIConfig
+): SelectionConfirmationDialog {
 
     companion object {
        val TAG = DefaultSelectionConfirmationDialog::class.simpleName
@@ -53,6 +56,9 @@ class DefaultSelectionConfirmationDialog:
 
         dialog.setContentView(R.layout.webauthn_selection_conformation_dialog)
 
+        dialog.findViewById<TextView>(R.id.webauthn_selection_confirmation_title).text =
+                config.selectionDialogTitle
+
         val spinner = dialog.findViewById<Spinner>(R.id.webauthn_selection_sources)
         val sourceTitles = sources.map { it.otherUI }
         val sourcesAdapter = ArrayAdapter<String>(activity, R.layout.webauthn_selection_source_item, sourceTitles)
@@ -60,11 +66,17 @@ class DefaultSelectionConfirmationDialog:
 
         dialog.window!!.setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
 
+        dialog.findViewById<Button>(R.id.webauthn_selection_confirmation_cancel_button).text =
+            config.selectionDialogCancelButtonText
+
         dialog.findViewById<Button>(R.id.webauthn_selection_confirmation_cancel_button).setOnClickListener {
             WAKLogger.d(TAG, "cancel clicked")
             dialog.dismiss()
             listener.onCancel()
         }
+
+        dialog.findViewById<Button>(R.id.webauthn_selection_confirmation_ok_button).text =
+            config.selectionDialogSelectButtonText
 
         dialog.findViewById<Button>(R.id.webauthn_selection_confirmation_ok_button).setOnClickListener {
             WAKLogger.d(TAG, "select clicked")

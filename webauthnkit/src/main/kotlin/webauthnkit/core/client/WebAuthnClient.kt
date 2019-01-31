@@ -11,7 +11,6 @@ import webauthnkit.core.authenticator.internal.CredentialStore
 import webauthnkit.core.authenticator.internal.InternalAuthenticator
 import webauthnkit.core.authenticator.internal.KeySupportChooser
 import webauthnkit.core.authenticator.internal.ui.UserConsentUI
-import webauthnkit.core.authenticator.internal.ui.UserConsentUIFactory
 import webauthnkit.core.client.operation.CreateOperation
 import webauthnkit.core.client.operation.GetOperation
 import webauthnkit.core.client.operation.OperationListener
