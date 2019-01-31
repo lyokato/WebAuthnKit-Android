@@ -8,6 +8,7 @@ import webauthnkit.core.util.WAKLogger
 import webauthnkit.core.authenticator.Authenticator
 import webauthnkit.core.authenticator.GetAssertionSession
 import webauthnkit.core.authenticator.MakeCredentialSession
+import webauthnkit.core.authenticator.internal.key.KeySupportChooser
 import webauthnkit.core.authenticator.internal.session.InternalGetAssertionSession
 import webauthnkit.core.authenticator.internal.session.InternalMakeCredentialSession
 import webauthnkit.core.authenticator.internal.ui.UserConsentUI

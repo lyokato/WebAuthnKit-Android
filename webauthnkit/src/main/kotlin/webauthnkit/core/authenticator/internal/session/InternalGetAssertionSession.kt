@@ -11,7 +11,7 @@ import webauthnkit.core.authenticator.GetAssertionSession
 import webauthnkit.core.authenticator.GetAssertionSessionListener
 import webauthnkit.core.authenticator.internal.CredentialStore
 import webauthnkit.core.authenticator.internal.InternalAuthenticatorSetting
-import webauthnkit.core.authenticator.internal.KeySupportChooser
+import webauthnkit.core.authenticator.internal.key.KeySupportChooser
 import webauthnkit.core.authenticator.internal.PublicKeyCredentialSource
 import webauthnkit.core.authenticator.internal.ui.UserConsentUI
 import webauthnkit.core.util.WAKLogger

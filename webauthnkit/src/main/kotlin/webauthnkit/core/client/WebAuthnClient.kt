@@ -9,7 +9,7 @@ import webauthnkit.core.*
 import webauthnkit.core.authenticator.Authenticator
 import webauthnkit.core.authenticator.internal.CredentialStore
 import webauthnkit.core.authenticator.internal.InternalAuthenticator
-import webauthnkit.core.authenticator.internal.KeySupportChooser
+import webauthnkit.core.authenticator.internal.key.KeySupportChooser
 import webauthnkit.core.authenticator.internal.ui.UserConsentUI
 import webauthnkit.core.client.operation.CreateOperation
 import webauthnkit.core.client.operation.GetOperation
