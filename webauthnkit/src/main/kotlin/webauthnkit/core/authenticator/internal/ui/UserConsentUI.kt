@@ -103,20 +103,31 @@ class DefaultUserConsentUI(
     private var cancelled: ErrorReason? = null
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?): Boolean {
+
         WAKLogger.d(TAG, "onActivityResult")
+
         return if (requestCode == REQUEST_CODE) {
+
             WAKLogger.d(TAG, "This is my result: $uuid")
-            if (resultCode == RESULT_OK) {
-                WAKLogger.d(TAG, "OK")
-                keyguardResultListener!!.onAuthenticated()
-            } else {
-                WAKLogger.d(TAG, "Failed")
-                keyguardResultListener!!.onFailed()
+
+            keyguardResultListener?.let {
+                if (resultCode == RESULT_OK) {
+                    WAKLogger.d(TAG, "OK")
+                    it.onAuthenticated()
+                } else {
+                    WAKLogger.d(TAG, "Failed")
+                    it.onFailed()
+                }
             }
+
             keyguardResultListener = null
+
             true
+
         } else {
+
             false
+
         }
     }
 
