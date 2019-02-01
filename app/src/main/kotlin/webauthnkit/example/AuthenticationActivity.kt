@@ -3,7 +3,7 @@ package webauthnkit.example
 import android.content.Intent
 import android.graphics.Color
 import android.os.Bundle
-import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.app.AppCompatActivity
 import com.jaredrummler.materialspinner.MaterialSpinner
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import org.jetbrains.anko.*
@@ -18,7 +18,6 @@ import webauthnkit.core.authenticator.internal.ui.UserConsentUIFactory
 import webauthnkit.core.client.WebAuthnClient
 import webauthnkit.core.util.ByteArrayUtil
 import webauthnkit.core.util.WAKLogger
-import java.util.*
 
 @ExperimentalCoroutinesApi
 @ExperimentalUnsignedTypes
