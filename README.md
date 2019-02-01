@@ -11,12 +11,12 @@ WIP
 
 ### AutoBackup setting
 
-Make sure to eclude 'webauthn.db'
+Make sure to eclude 'webauthnkit.db'
 
 - AndroidManifest.xml
 ```xml
-    <application
-            android:fullBackupContent="@xml/backup_rules">
+<application
+        android:fullBackupContent="@xml/backup_rules">
 ```
 
 - values/backup_rules.xml
@@ -31,8 +31,8 @@ Make sure to eclude 'webauthn.db'
 Or you can set allowBackup="false" simply.
 
 ```xml
-   <application
-            android:allowBackup="false">
+<application
+        android:allowBackup="false">
 ```
 
 ### Activity
