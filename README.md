@@ -128,6 +128,7 @@ private suspend fun executeRegistration() {
     try {
 
         val credential = client.create(options)
+
         // send parameters to your server
         // credential.id
         // credential.rawId
@@ -175,6 +176,8 @@ private suspend fun executeAuthentication() {
     try {
 
         val assertion = client.get(options)
+
+        // send parameters to your server
         //assertion.id
         //assertion.rawId
         //assertion.response.authenticatorData
