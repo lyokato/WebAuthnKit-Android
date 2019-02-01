@@ -1,5 +1,5 @@
 
-# WebAuthnKit
+# WebAuthnKit (Android)
 
 This library provides you a way to handle W3C Web Authentication API (a.k.a. WebAuthN / FIDO 2.0) easily.
 
