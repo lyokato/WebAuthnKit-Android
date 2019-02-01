@@ -53,7 +53,7 @@ class AuthenticationActivity : AppCompatActivity() {
 
 ### Setup your WebAuthnClient
 
-At first prepare UserConsentUI on your Activity.
+At first, prepare UserConsentUI on your Activity.
 
 ```kotlin
 import webauthnkit.core.authenticator.internal.ui.UserConsentUI
@@ -143,7 +143,7 @@ private suspend fun executeRegistration() {
 If you would like to stop while client is in progress, you can call cancel method.
 
 ```kotlin
-webAuthnClient.cancel()
+client.cancel()
 ```
 
 `webauthnkit.core.CancelledException` will be thrown in your suspend function.
