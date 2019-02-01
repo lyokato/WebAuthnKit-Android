@@ -4,6 +4,27 @@ apply plugin: 'kotlin-android'
 apply plugin: 'kotlin-android-extensions'
 apply plugin: 'kotlinx-serialization'
 
+apply plugin: 'com.novoda.bintray-release'
+
+buildscript {
+    repositories {
+        jcenter()
+    }
+    dependencies {
+        classpath 'com.novoda:bintray-release:0.9'
+    }
+}
+
+publish {
+    userOrg = 'lyokato'
+    groupId = 'webauthnkit'
+    artifactId = 'webauthnkit-core'
+    publishVersion = '0.1.0'
+    desc = 'WebAuthn/FIDO2 library for Android'
+    website = 'https://github.com/lyokato/WebAuthnKit-Android'
+    repoName = 'maven'
+}
+
 android {
     compileSdkVersion 28
 
@@ -42,6 +63,6 @@ dependencies {
     api "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version"
     api "org.jetbrains.kotlinx:kotlinx-serialization-runtime:0.9.1"
     api "org.jetbrains.kotlinx:kotlinx-coroutines-core:1.0.1"
-    api "com.fasterxml.jackson.core:jackson-databind:2.7.4"
+    api "com.fasterxml.jackson.core:jackson-databind:2.9.5"
     implementation 'com.github.bumptech.glide:glide:4.8.0'
 }
