@@ -195,6 +195,7 @@ private suspend fun executeAuthentication() {
 - Extensions
 - BLE Authenticator
 - BLE Roaming Service
+- SafetyNet Attestation
 
 ### Key Algorithm Support
 
@@ -203,6 +204,10 @@ private suspend fun executeAuthentication() {
 ### Resident Key
 
 InternalAuthenticator forces to use resident-key.
+
+### Attestation
+
+Currently, this library supports only self-attestation.
 
 ## See Also
 
