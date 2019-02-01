@@ -4,14 +4,12 @@ import android.content.Intent
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.serialization.ImplicitReflectionSerializer
 import org.jetbrains.anko.*
 import org.jetbrains.anko.sdk27.coroutines.onClick
 import webauthnkit.core.util.WAKLogger
 
 @ExperimentalCoroutinesApi
 @ExperimentalUnsignedTypes
-@ImplicitReflectionSerializer
 class MainActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {

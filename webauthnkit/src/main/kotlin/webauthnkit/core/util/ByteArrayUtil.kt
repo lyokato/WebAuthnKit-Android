@@ -1,7 +1,6 @@
 package webauthnkit.core.util
 
 import android.util.Base64
-import kotlinx.serialization.toUtf8Bytes
 import java.nio.ByteBuffer
 import java.security.MessageDigest
 import java.util.*
@@ -9,7 +8,7 @@ import java.util.*
 object ByteArrayUtil {
 
     fun sha256(str: String): ByteArray {
-        return sha256(str.toUtf8Bytes())
+        return sha256(str.toByteArray(charset = Charsets.UTF_8))
     }
 
     fun sha256(bytes: ByteArray): ByteArray {

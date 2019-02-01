@@ -1,7 +1,6 @@
 package webauthnkit.core.util
 
-import kotlinx.io.ByteArrayOutputStream
-import kotlinx.serialization.toUtf8Bytes
+import java.io.ByteArrayOutputStream
 import java.nio.ByteBuffer
 import java.util.*
 import kotlin.experimental.and
@@ -541,7 +540,7 @@ class CBORWriter() {
     }
 
     fun putString(value: String): CBORWriter {
-        val data = value.toUtf8Bytes()
+        val data = value.toByteArray(charset = Charsets.UTF_8)
         val header = composeNumber(data.size.toLong())
         header[0] = header[0] or CBORBits.stringHeader.toByte()
         this.result.write(header)
@@ -595,7 +594,7 @@ class CBORWriter() {
     private fun composeNegative(value: Long): ByteArray {
         val aVal = if (value == Long.MIN_VALUE) Long.MAX_VALUE else -1 - value
         val data = composePositive(aVal)
-        data[0] = data[0] or CBORBits.negativeHeader.toByte()
+        data[0] = data[0] or CBORBits.negativeHeader
         return data
     }
 
