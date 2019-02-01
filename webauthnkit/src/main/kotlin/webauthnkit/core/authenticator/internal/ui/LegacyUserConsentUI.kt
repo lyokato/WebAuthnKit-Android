@@ -25,12 +25,9 @@ class LegacyUserConsentUI(
     private val activity: FragmentActivity
 ): UserConsentUI {
 
-
     companion object {
         val TAG = LegacyUserConsentUI::class.simpleName
     }
-
-    val uuid = UUID.randomUUID().toString()
 
     override val config = UserConsentUIConfig()
 
@@ -49,7 +46,7 @@ class LegacyUserConsentUI(
     }
 
     private fun <T> finish(cont: Continuation<T>, result: T) {
-        WAKLogger.d(TAG, "finish: $uuid")
+        WAKLogger.d(TAG, "finish")
         isOpen = false
         if (cancelled != null) {
             cont.resumeWithException(cancelled!!.rawValue)
@@ -59,7 +56,7 @@ class LegacyUserConsentUI(
     }
 
     private fun <T> fail(cont: Continuation<T>) {
-        WAKLogger.d(TAG, "fail: $uuid")
+        WAKLogger.d(TAG, "fail")
         isOpen = false
         if (cancelled != null) {
             cont.resumeWithException(cancelled!!.rawValue)

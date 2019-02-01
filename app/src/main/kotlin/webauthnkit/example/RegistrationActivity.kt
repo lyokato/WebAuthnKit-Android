@@ -253,6 +253,16 @@ class RegistrationActivity : AppCompatActivity() {
         */
     }
 
+    override fun onStart() {
+        WAKLogger.d(TAG, "onStart")
+        super.onStart()
+    }
+
+    override fun onStop() {
+        WAKLogger.d(TAG, "onStop")
+        super.onStop()
+    }
+
     var consentUI: UserConsentUI? = null
 
     private suspend fun onExecute(

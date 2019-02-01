@@ -33,8 +33,6 @@ class DefaultUserConsentUI(
         const val REQUEST_CODE = 6749
     }
 
-    val uuid = UUID.randomUUID().toString()
-
     var keyguardResultListener: KeyguardResultListener? = null
 
     override val config = UserConsentUIConfig()
@@ -50,7 +48,7 @@ class DefaultUserConsentUI(
 
         return if (requestCode == REQUEST_CODE) {
 
-            WAKLogger.d(TAG, "This is my result: $uuid")
+            WAKLogger.d(TAG, "This is my result")
 
             keyguardResultListener?.let {
                 if (resultCode == RESULT_OK) {
@@ -79,7 +77,7 @@ class DefaultUserConsentUI(
     }
 
     private fun <T> finish(cont: Continuation<T>, result: T) {
-        WAKLogger.d(TAG, "finish: $uuid")
+        WAKLogger.d(TAG, "finish")
         isOpen = false
         if (cancelled != null) {
             cont.resumeWithException(cancelled!!.rawValue)
@@ -89,7 +87,7 @@ class DefaultUserConsentUI(
     }
 
     private fun <T> fail(cont: Continuation<T>) {
-        WAKLogger.d(TAG, "fail: $uuid")
+        WAKLogger.d(TAG, "fail")
         isOpen = false
         if (cancelled != null) {
             cont.resumeWithException(cancelled!!.rawValue)
@@ -214,8 +212,6 @@ class DefaultUserConsentUI(
 
         } else {
             WAKLogger.d(TAG, "keyguard is secure")
-
-            WAKLogger.d(TAG, "keyguard listener: $uuid")
 
             keyguardResultListener = object : KeyguardResultListener {
 

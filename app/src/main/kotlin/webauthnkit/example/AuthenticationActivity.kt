@@ -28,10 +28,8 @@ class AuthenticationActivity : AppCompatActivity() {
         private val TAG = AuthenticationActivity::class.simpleName
     }
 
-    val uuid = UUID.randomUUID().toString()
-
     override fun onCreate(savedInstanceState: Bundle?) {
-        WAKLogger.d(TAG, "onCreate: $uuid")
+        WAKLogger.d(TAG, "onCreate")
         super.onCreate(savedInstanceState)
 
         val userVerificationOptions = listOf("Required", "Preferred", "Discouraged")
@@ -141,17 +139,15 @@ class AuthenticationActivity : AppCompatActivity() {
         consentUI = UserConsentUIFactory.create(this)
         WAKLogger.d(TAG, "create consentUI===========================================")
 
-        val webAuthnClient = WebAuthnClient.internal(
+        return WebAuthnClient.internal(
             activity = this,
             origin   = "https://example.org",
             ui       = consentUI!!
         )
-
-        return webAuthnClient
     }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
-        WAKLogger.d(TAG, "onActivityResult: $uuid")
+        WAKLogger.d(TAG, "onActivityResult")
         consentUI?.onActivityResult(requestCode, resultCode, data)
         /*
         if (consentUI != null && consentUI!!.onActivityResult(requestCode, resultCode, data)) {
@@ -160,12 +156,23 @@ class AuthenticationActivity : AppCompatActivity() {
         */
     }
 
+    override fun onStart() {
+        WAKLogger.d(TAG, "onStart")
+        super.onStart()
+    }
+
+    override fun onStop() {
+        WAKLogger.d(TAG, "onStop")
+        super.onStop()
+    }
+
     var consentUI: UserConsentUI? = null
+    var webAuthnClient: WebAuthnClient? = null
 
     private suspend fun onExecute(relyingParty: String, challenge: String,
                           credId: String, userVerification: UserVerificationRequirement) {
 
-        WAKLogger.d(TAG, "onExecute: $uuid")
+        WAKLogger.d(TAG, "onExecute")
         val options = PublicKeyCredentialRequestOptions()
         options.challenge        = ByteArrayUtil.fromHex(challenge)
         options.rpId             = relyingParty
@@ -177,11 +184,11 @@ class AuthenticationActivity : AppCompatActivity() {
                 transports   = mutableListOf(AuthenticatorTransport.Internal))
         }
 
-        val webAuthnClient = createWebAuthnClient()
+        webAuthnClient = createWebAuthnClient()
 
         try {
 
-            val cred = webAuthnClient.get(options)
+            val cred = webAuthnClient!!.get(options)
             WAKLogger.d(TAG, "CHALLENGE:" + ByteArrayUtil.encodeBase64URL(options.challenge))
             showResultActivity(cred)
 
@@ -193,9 +200,6 @@ class AuthenticationActivity : AppCompatActivity() {
         } finally {
             consentUI = null
         }
-
-        WAKLogger.d(TAG, "onExecuteCompleted: $uuid")
-
     }
 
     private fun showErrorPopup(msg: String) {
