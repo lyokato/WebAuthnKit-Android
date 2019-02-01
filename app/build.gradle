@@ -25,6 +25,7 @@ android {
     sourceSets {
         main.java.srcDirs += 'src/main/kotlin'
     }
+
 }
 
 dependencies {
@@ -44,9 +45,4 @@ dependencies {
     implementation 'com.jaredrummler:material-spinner:1.2.5'
 
     implementation "org.jetbrains.anko:anko:$anko_version"
-
-    //implementation "org.jetbrains.anko:anko-commons:$anko_version"
-    //implementation "org.jetbrains.anko:anko-sdk25:$anko_version" // sdk15, sdk19, sdk21, sdk23 are also available
-    //implementation "org.jetbrains.anko:anko-appcompat-v7:$anko_version"
-    //implementation "org.jetbrains.anko:anko-design:$anko_version"
 }

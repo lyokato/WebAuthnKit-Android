@@ -70,7 +70,7 @@ class WebAuthnClient(
 
         val (data, json, hash) =
                 generateClientData(
-                    type      = CollectedClientDataType.Create,
+                    type      = CollectedClientDataType.Get,
                     challenge = ByteArrayUtil.encodeBase64URL(options.challenge)
                 )
 

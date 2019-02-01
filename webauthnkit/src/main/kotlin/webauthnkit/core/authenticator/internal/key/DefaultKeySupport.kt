@@ -141,6 +141,7 @@ class DefaultKeySupport(
         attStmt["alg"] = alg.toLong()
         attStmt["sig"] = sig
 
+        /*
         if (useSecureHardware(alias)) {
 
             WAKLogger.d(
@@ -167,6 +168,7 @@ class DefaultKeySupport(
             )
 
         } else {
+        */
 
             WAKLogger.d(
                 TAG,
@@ -178,7 +180,7 @@ class DefaultKeySupport(
                 authData = authenticatorData,
                 attStmt  = attStmt
             )
-        }
+        //}
 
     }
 }
