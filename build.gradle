@@ -6,12 +6,10 @@ buildscript {
     repositories {
         google()
         jcenter()
-        maven { url "https://kotlin.bintray.com/kotlinx" }
     }
     dependencies {
         classpath 'com.android.tools.build:gradle:3.3.0'
         classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
-        classpath "org.jetbrains.kotlin:kotlin-serialization:$kotlin_version"
     }
 }
 
@@ -19,7 +17,6 @@ allprojects {
     repositories {
         google()
         jcenter()
-        maven { url "https://kotlin.bintray.com/kotlinx" }
     }
 }
 
