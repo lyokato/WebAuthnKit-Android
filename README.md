@@ -22,14 +22,13 @@ dependencies {
 }
 ```
 
-
 pom
 
 ```xml
 <dependency>
   <groupId>webauthnkit</groupId>
   <artifactId>webauthnkit-core</artifactId>
-  <version>0.1.0</version>
+  <version>0.9.1</version>
   <type>pom</type>
 </dependency>
 ```
