@@ -37,7 +37,7 @@ pom
 
 ### AutoBackup setting
 
-Make sure to eclude 'webauthnkit.db'
+Make sure to exclude 'webauthnkit.db'
 
 - AndroidManifest.xml
 ```xml
