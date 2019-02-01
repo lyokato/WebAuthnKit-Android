@@ -7,6 +7,8 @@ This library provides you a way to handle W3C Web Authentication API (a.k.a. Web
 
 ## Version
 
+0.9.0
+
 THIS VERSION IS NOT STABLE YET
 
 This library doens't work as expected on Android5 currently.
@@ -14,6 +16,15 @@ This library doens't work as expected on Android5 currently.
 ## Installation
 
 WIP
+
+```xml
+<dependency>
+  <groupId>webauthnkit</groupId>
+  <artifactId>webauthnkit-core</artifactId>
+  <version>0.1.0</version>
+  <type>pom</type>
+</dependency>
+```
 
 ## Getting Started
 
