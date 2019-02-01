@@ -215,8 +215,8 @@ class AuthenticationActivity : AppCompatActivity() {
             intent.putExtra("CRED_RAW", ByteArrayUtil.toHex(cred.rawId))
             intent.putExtra("CLIENT_JSON", cred.response.clientDataJSON)
             intent.putExtra("AUTHENTICATOR_DATA", ByteArrayUtil.encodeBase64URL(cred.response.authenticatorData))
-            intent.putExtra("SIGNATURE", ByteArrayUtil.toHex(cred.response.signature))
-            intent.putExtra("USER_HANDLE", String(bytes = cred.response.userHandle!!, charset = Charsets.UTF_8))
+            intent.putExtra("SIGNATURE", ByteArrayUtil.encodeBase64URL(cred.response.signature))
+            intent.putExtra("USER_HANDLE", ByteArrayUtil.encodeBase64URL(cred.response.userHandle!!))
             WAKLogger.d(TAG, "start activity")
             startActivity(intent)
         }
