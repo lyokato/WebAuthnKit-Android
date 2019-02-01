@@ -5,9 +5,7 @@ This library provides you a way to handle W3C Web Authentication API (a.k.a. Web
 
 ![android_webauthnkit](https://user-images.githubusercontent.com/30877/52110613-81deba80-2644-11e9-8349-db9880127cfe.jpg)
 
-## Version
-
-0.9.0
+## Attention
 
 THIS VERSION IS NOT STABLE YET
 
@@ -15,7 +13,17 @@ This library doens't work as expected on Android5 currently.
 
 ## Installation
 
-WIP
+
+In your application's build.gradle
+
+```gradle
+dependencies {
+  implementation 'webauthnkit:webauthnkit-core:0.9.1'
+}
+```
+
+
+pom
 
 ```xml
 <dependency>
