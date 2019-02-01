@@ -9,6 +9,8 @@ This library provides you a way to handle W3C Web Authentication API (a.k.a. Web
 
 THIS VERSION IS NOT STABLE YET
 
+This library doens't work as expected on Android5 currently.
+
 ## Installation
 
 WIP
