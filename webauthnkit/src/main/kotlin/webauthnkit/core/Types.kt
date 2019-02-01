@@ -1,7 +1,5 @@
 package webauthnkit.core
 
-import kotlinx.serialization.Optional
-import kotlinx.serialization.Serializable
 import java.lang.RuntimeException
 
 class BadOperationException(msg: String? = null) : RuntimeException(msg)
@@ -22,39 +20,45 @@ enum class ErrorReason(val rawValue: RuntimeException) {
     NotAllowed(NotAllowedException()),
     Unsupported(UnsupportedException()),
     Unknown(UnknownException())
+
 }
 
 enum class PublicKeyCredentialType(val rawValue: String) {
-    PublicKey("public-key")
+    PublicKey("public-key");
+
+    override fun toString(): String {
+        return rawValue
+    }
 }
 
 enum class UserVerificationRequirement(val rawValue: String) {
     Required("required"),
     Preferred("preferred"),
-    Discouraged("discouraged")
+    Discouraged("discouraged");
+
+    override fun toString(): String {
+        return rawValue
+    }
 }
 
 open class AuthenticatorResponse
 
-@ExperimentalUnsignedTypes
 data class AuthenticatorAttestationResponse(
     var clientDataJSON:    String,
-    var attestationObject: UByteArray
+    var attestationObject: ByteArray
 ): AuthenticatorResponse()
 
-@ExperimentalUnsignedTypes
 data class AuthenticatorAssertionResponse(
     var clientDataJSON:    String,
-    var authenticatorData: UByteArray,
-    var signature:         UByteArray,
-    var userHandle:        UByteArray?
+    var authenticatorData: ByteArray,
+    var signature:         ByteArray,
+    var userHandle:        ByteArray?
 ): AuthenticatorResponse()
 
-@ExperimentalUnsignedTypes
 data class PublicKeyCredential<T: AuthenticatorResponse>(
     val type: PublicKeyCredentialType = PublicKeyCredentialType.PublicKey,
     var id: String,
-    var rawId: UByteArray,
+    var rawId: ByteArray,
     var response: T
 )
 
@@ -62,14 +66,17 @@ enum class AuthenticatorTransport(val rawValue: String) {
     USB("usb"),
     BLE("ble"),
     NFC("nfc"),
-    Internal("internal"),
+    Internal("internal");
+
+    override fun toString(): String {
+        return rawValue
+    }
 }
 
-@ExperimentalUnsignedTypes
 data class PublicKeyCredentialDescriptor(
     val type: PublicKeyCredentialType = PublicKeyCredentialType.PublicKey,
-    var id: UByteArray,
-    var transports: MutableList<AuthenticatorTransport> = ArrayList<AuthenticatorTransport>()
+    var id: ByteArray,
+    var transports: MutableList<AuthenticatorTransport> = ArrayList()
 ) {
 
     fun addTransport(transport: AuthenticatorTransport) {
@@ -91,9 +98,14 @@ data class PublicKeyCredentialUserEntity(
 )
 
 enum class AttestationConveyancePreference(val rawValue: String) {
+
     None("none"),
     Direct("direct"),
-    Indirect("indirect")
+    Indirect("indirect");
+
+    override fun toString(): String {
+        return rawValue
+    }
 }
 
 data class PublicKeyCredentialParameters(
@@ -103,7 +115,12 @@ data class PublicKeyCredentialParameters(
 
 enum class TokenBindingStatus(val rawValue: String) {
     Present("present"),
-    Supported("supported")
+    Supported("supported");
+
+    override fun toString(): String {
+        return rawValue
+    }
+
 }
 
 data class TokenBinding(
@@ -113,37 +130,44 @@ data class TokenBinding(
 
 enum class CollectedClientDataType(val rawValue: String) {
     Create("webauthn.create"),
-    Get("webauthn.get")
+    Get("webauthn.get");
+
+    override fun toString(): String {
+        return rawValue
+    }
 }
 
-@Serializable
 data class CollectedClientData(
-    val type: CollectedClientDataType,
+    //val type: CollectedClientDataType,
+    val type: String,
     var challenge: String,
     var origin: String,
-    @Optional var tokenBinding: TokenBinding? = null
+    var tokenBinding: TokenBinding? = null
 )
 
 enum class AuthenticatorAttachment(val rawValue: String) {
     Platform("platform"),
-    CrossPlatform("cross-platform")
+    CrossPlatform("cross-platform");
+
+    override fun toString(): String {
+        return rawValue
+    }
 }
 
 data class AuthenticatorSelectionCriteria(
-    var authenticatorAttachment: AuthenticatorAttachment?,
+    var authenticatorAttachment: AuthenticatorAttachment? = null,
     var requireResidentKey: Boolean = true,
     var userVerification: UserVerificationRequirement = UserVerificationRequirement.Required
 )
 
-@ExperimentalUnsignedTypes
 class PublicKeyCredentialCreationOptions(
-    var rp: PublicKeyCredentialRpEntity,
-    var user: PublicKeyCredentialUserEntity,
-    var challenge: UByteArray,
+    var rp: PublicKeyCredentialRpEntity = PublicKeyCredentialRpEntity(),
+    var user: PublicKeyCredentialUserEntity = PublicKeyCredentialUserEntity(),
+    var challenge: ByteArray = ByteArray(0),
     var pubKeyCredParams: MutableList<PublicKeyCredentialParameters> = ArrayList(),
-    var timeout: Long?,
+    var timeout: Long? = null,
     var excludeCredentials: MutableList<PublicKeyCredentialDescriptor> = ArrayList(),
-    var authenticatorSelection: AuthenticatorSelectionCriteria?,
+    var authenticatorSelection: AuthenticatorSelectionCriteria? = null,
     var attestation: AttestationConveyancePreference = AttestationConveyancePreference.Direct,
     var extensions: Map<String, Any> = HashMap()
 ) {
@@ -152,26 +176,23 @@ class PublicKeyCredentialCreationOptions(
     }
 }
 
-@ExperimentalUnsignedTypes
 data class PublicKeyCredentialRequestOptions(
-    var challenge: UByteArray,
-    var rpId: String?,
+    var challenge: ByteArray = ByteArray(0),
+    var rpId: String? = null,
     var allowCredential: MutableList<PublicKeyCredentialDescriptor> = ArrayList(),
     var userVerification: UserVerificationRequirement = UserVerificationRequirement.Required,
-    var timeout: Long
+    var timeout: Long? = null
 ) {
-    fun addAllowCredential(credentialId: UByteArray, transports: MutableList<AuthenticatorTransport>) {
+    fun addAllowCredential(credentialId: ByteArray, transports: MutableList<AuthenticatorTransport>) {
         this.allowCredential.add(
             PublicKeyCredentialDescriptor(
-                id = credentialId,
+                id         = credentialId,
                 transports = transports
             )
         )
     }
 }
 
-@ExperimentalUnsignedTypes
 typealias MakeCredentialResponse = PublicKeyCredential<AuthenticatorAttestationResponse>
 
-@ExperimentalUnsignedTypes
 typealias GetAssertionResponse = PublicKeyCredential<AuthenticatorAssertionResponse>

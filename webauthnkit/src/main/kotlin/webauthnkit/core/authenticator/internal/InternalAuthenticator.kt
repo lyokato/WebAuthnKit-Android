@@ -1,36 +1,39 @@
 package webauthnkit.core.authenticator.internal
 
+import androidx.fragment.app.Fragment
+import androidx.fragment.app.FragmentActivity
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.serialization.ImplicitReflectionSerializer
 
 import webauthnkit.core.AuthenticatorAttachment
 import webauthnkit.core.AuthenticatorTransport
-import webauthnkit.core.util.AuthndroidLogger
+import webauthnkit.core.util.WAKLogger
 import webauthnkit.core.authenticator.Authenticator
 import webauthnkit.core.authenticator.GetAssertionSession
 import webauthnkit.core.authenticator.MakeCredentialSession
+import webauthnkit.core.authenticator.internal.key.KeySupportChooser
 import webauthnkit.core.authenticator.internal.session.InternalGetAssertionSession
 import webauthnkit.core.authenticator.internal.session.InternalMakeCredentialSession
 import webauthnkit.core.authenticator.internal.ui.UserConsentUI
 
+@ExperimentalUnsignedTypes
 class InternalAuthenticatorSetting {
     val attachment = AuthenticatorAttachment.Platform
     val transport  = AuthenticatorTransport.Internal
-    var counterStep: Int = 1
+    var counterStep: UInt = 1u
     var allowUserVerification = true
 }
 
 @ExperimentalCoroutinesApi
-@ImplicitReflectionSerializer
 @ExperimentalUnsignedTypes
 class InternalAuthenticator(
+    private val activity:          FragmentActivity,
     private val ui:                UserConsentUI,
-    private val credentialStore:   CredentialStore,
-    private val keySupportChooser: KeySupportChooser
+    private val credentialStore:   CredentialStore = CredentialStore(activity),
+    private val keySupportChooser: KeySupportChooser = KeySupportChooser(activity)
 ) : Authenticator {
 
     companion object {
-        val TAG = this::class.simpleName
+        val TAG = InternalAuthenticator::class.simpleName
     }
 
     private val setting = InternalAuthenticatorSetting()
@@ -41,7 +44,7 @@ class InternalAuthenticator(
     override val transport: AuthenticatorTransport
         get() = setting.transport
 
-    override var counterStep: Int
+    override var counterStep: UInt
         get() = setting.counterStep
         set(value) { setting.counterStep = value }
 
@@ -52,7 +55,7 @@ class InternalAuthenticator(
         set(value) { setting.allowUserVerification = value }
 
     override fun newGetAssertionSession(): GetAssertionSession {
-        AuthndroidLogger.d(TAG, "newGetAssertionSession")
+        WAKLogger.d(TAG, "newGetAssertionSession")
         return InternalGetAssertionSession(
             setting           = setting,
             ui                = ui,
@@ -62,7 +65,7 @@ class InternalAuthenticator(
     }
 
     override fun newMakeCredentialSession(): MakeCredentialSession {
-        AuthndroidLogger.d(TAG, "newMakeCredentialSession")
+        WAKLogger.d(TAG, "newMakeCredentialSession")
         return InternalMakeCredentialSession(
             setting           = setting,
             ui                = ui,

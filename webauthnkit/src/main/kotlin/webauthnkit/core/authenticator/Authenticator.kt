@@ -2,12 +2,11 @@ package webauthnkit.core.authenticator
 
 import webauthnkit.core.*
 
-@ExperimentalUnsignedTypes
 class AuthenticatorAssertionResult(
-    var credentialId:      UByteArray?,
-    var userHandle:        UByteArray?,
-    var signature:         UByteArray,
-    var authenticatorData: UByteArray
+    var credentialId:      ByteArray?,
+    var userHandle:        ByteArray?,
+    var signature:         ByteArray,
+    var authenticatorData: ByteArray
 )
 
 @ExperimentalUnsignedTypes
@@ -35,7 +34,7 @@ interface GetAssertionSession {
 
     fun getAssertion(
         rpId: String,
-        hash: UByteArray,
+        hash: ByteArray,
         allowCredentialDescriptorList: List<PublicKeyCredentialDescriptor>,
         requireUserPresence: Boolean,
         requireUserVerification: Boolean
@@ -54,7 +53,7 @@ interface MakeCredentialSession {
     var listener: MakeCredentialSessionListener?
 
     fun makeCredential(
-        hash: UByteArray,
+        hash: ByteArray,
         rpEntity: PublicKeyCredentialRpEntity,
         userEntity: PublicKeyCredentialUserEntity,
         requireResidentKey: Boolean,
@@ -74,7 +73,7 @@ interface Authenticator {
 
     val attachment: AuthenticatorAttachment
     val transport: AuthenticatorTransport
-    val counterStep: Int
+    val counterStep: UInt
     val allowResidentKey: Boolean
     val allowUserVerification: Boolean
 

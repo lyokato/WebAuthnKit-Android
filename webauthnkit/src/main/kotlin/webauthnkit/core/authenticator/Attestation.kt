@@ -1,8 +1,8 @@
 package webauthnkit.core.authenticator
 
-import com.fasterxml.jackson.databind.ObjectMapper
-import com.fasterxml.jackson.dataformat.cbor.CBORFactory
-import webauthnkit.core.util.AuthndroidLogger
+import webauthnkit.core.util.ByteArrayUtil
+import webauthnkit.core.util.CBORWriter
+import webauthnkit.core.util.WAKLogger
 
 @ExperimentalUnsignedTypes
 class AttestationObject(
@@ -12,7 +12,7 @@ class AttestationObject(
 ) {
 
     companion object {
-        val TAG = this::class.simpleName
+        val TAG = AttestationObject::class.simpleName
     }
 
     fun toNone(): AttestationObject {
@@ -24,7 +24,7 @@ class AttestationObject(
     }
 
     fun isSelfAttestation(): Boolean {
-        AuthndroidLogger.d(TAG, "isSelfAttestation")
+        WAKLogger.d(TAG, "isSelfAttestation")
         if (this.fmt != "packed") {
             return false
         }
@@ -37,32 +37,32 @@ class AttestationObject(
         if (this.authData.attestedCredentialData != null) {
            return false
         }
-        if (this.authData.attestedCredentialData!!.aaguid.any { it != 0x00.toUByte() }) {
+        if (this.authData.attestedCredentialData!!.aaguid.any { it != 0x00.toByte() }) {
             return false
         }
         return true
     }
 
-    fun toBytes(): UByteArray? {
-        AuthndroidLogger.d(TAG, "toBytes")
+    fun toBytes(): ByteArray? {
+        WAKLogger.d(TAG, "toBytes")
 
         return try {
             val authDataBytes = this.authData.toBytes()
             if (authDataBytes == null) {
-                AuthndroidLogger.d(TAG, "failed to build authenticator data")
+                WAKLogger.d(TAG, "failed to build authenticator data")
                 return null
             }
             val map = LinkedHashMap<String, Any>()
-            map["authData"] = authDataBytes.toByteArray()
+            map["authData"] = authDataBytes
             map["fmt"]      = this.fmt
             map["attStmt"]  = this.attStmt
 
-            ObjectMapper(CBORFactory())
-                .writeValueAsBytes(map)
-                .toUByteArray()
+            WAKLogger.d(TAG, "AUTH_DATA: " + ByteArrayUtil.toHex(authDataBytes))
+
+            return CBORWriter().putStringKeyMap(map).compute()
 
         } catch (e: Exception) {
-            AuthndroidLogger.d(TAG, "failed to build attestation binary: " + e.localizedMessage)
+            WAKLogger.d(TAG, "failed to build attestation binary: " + e.localizedMessage)
             null
 
         }

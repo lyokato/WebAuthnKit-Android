@@ -1,45 +1,74 @@
 package webauthnkit.core.client
 
+import androidx.fragment.app.FragmentActivity
+import com.fasterxml.jackson.annotation.JsonInclude
+import com.fasterxml.jackson.databind.ObjectMapper
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.serialization.ImplicitReflectionSerializer
-import kotlinx.serialization.json.JSON
-import kotlinx.serialization.stringify
+import webauthnkit.core.*
 
-import webauthnkit.core.CollectedClientData
-import webauthnkit.core.CollectedClientDataType
-import webauthnkit.core.PublicKeyCredentialCreationOptions
-import webauthnkit.core.PublicKeyCredentialRequestOptions
 import webauthnkit.core.authenticator.Authenticator
+import webauthnkit.core.authenticator.internal.CredentialStore
+import webauthnkit.core.authenticator.internal.InternalAuthenticator
+import webauthnkit.core.authenticator.internal.key.KeySupportChooser
+import webauthnkit.core.authenticator.internal.ui.UserConsentUI
 import webauthnkit.core.client.operation.CreateOperation
 import webauthnkit.core.client.operation.GetOperation
-import webauthnkit.core.util.AuthndroidLogger
+import webauthnkit.core.client.operation.OperationListener
+import webauthnkit.core.client.operation.OperationType
+import webauthnkit.core.util.WAKLogger
 import webauthnkit.core.util.ByteArrayUtil
 
 @ExperimentalCoroutinesApi
 @ExperimentalUnsignedTypes
-@ImplicitReflectionSerializer
 class WebAuthnClient(
-    private val authenticator: Authenticator,
+    val authenticator: Authenticator,
     private val origin:        String
-) {
+): OperationListener {
 
     companion object {
-        val TAG = this::class.simpleName
+        val TAG = WebAuthnClient::class.simpleName
+
+        fun internal(
+            activity: FragmentActivity,
+            origin:   String,
+            ui:       UserConsentUI
+        ): WebAuthnClient {
+
+            val authenticator = InternalAuthenticator(
+                activity = activity,
+                ui       = ui
+            )
+
+            return WebAuthnClient(
+                origin        = origin,
+                authenticator = authenticator
+            )
+        }
     }
 
     var defaultTimeout: Long = 60
     var minTimeout:     Long = 15
     var maxTimeout:     Long = 120
 
-    fun get(options: PublicKeyCredentialRequestOptions): GetOperation {
-        AuthndroidLogger.d(TAG, "get")
+    private val getOperations: MutableMap<String, GetOperation> = HashMap()
+    private val createOperations: MutableMap<String, CreateOperation> = HashMap()
+
+    suspend fun get(options: PublicKeyCredentialRequestOptions): GetAssertionResponse {
+        val op = newGetOperation(options)
+        op.listener = this
+        getOperations[op.opId] = op
+        return op.start()
+    }
+
+    private fun newGetOperation(options: PublicKeyCredentialRequestOptions): GetOperation {
+        WAKLogger.d(TAG, "get")
 
         val timer = adjustLifetimeTimer(options.timeout)
         val rpId  = pickRelyingPartyID(options.rpId)
 
         val (data, json, hash) =
                 generateClientData(
-                    type      = CollectedClientDataType.Create,
+                    type      = CollectedClientDataType.Get,
                     challenge = ByteArrayUtil.encodeBase64URL(options.challenge)
                 )
 
@@ -56,8 +85,16 @@ class WebAuthnClient(
         )
     }
 
-    fun create(options: PublicKeyCredentialCreationOptions): CreateOperation {
-        AuthndroidLogger.d(TAG, "create")
+    suspend fun create(options: PublicKeyCredentialCreationOptions): MakeCredentialResponse {
+        val op = newCreateOperation(options)
+        op.listener = this
+        createOperations[op.opId] = op
+        return op.start()
+    }
+
+
+    private fun newCreateOperation(options: PublicKeyCredentialCreationOptions): CreateOperation {
+        WAKLogger.d(TAG, "create")
 
         val timer = adjustLifetimeTimer(options.timeout)
         val rpId  = pickRelyingPartyID(options.rp.id)
@@ -81,8 +118,14 @@ class WebAuthnClient(
         )
     }
 
+    fun cancel() {
+        WAKLogger.d(TAG, "cancel")
+        getOperations.forEach { it.value.cancel()}
+        createOperations.forEach { it.value.cancel()}
+    }
+
     private fun adjustLifetimeTimer(timeout: Long?): Long {
-        AuthndroidLogger.d(TAG, "adjustLifetimeTimer")
+        WAKLogger.d(TAG, "adjustLifetimeTimer")
         return timeout?.let { t ->
             return when {
                 t < minTimeout -> minTimeout
@@ -93,26 +136,49 @@ class WebAuthnClient(
     }
 
     private fun pickRelyingPartyID(rpId: String?): String {
-        AuthndroidLogger.d(TAG, "pickRelyingPartyID")
+        WAKLogger.d(TAG, "pickRelyingPartyID")
         return rpId?.let { it } ?: origin
     }
 
     private fun generateClientData(
         type: CollectedClientDataType,
         challenge: String
-    ): Triple<CollectedClientData, String, UByteArray> {
+    ): Triple<CollectedClientData, String, ByteArray> {
 
-        AuthndroidLogger.d(TAG, "generateClientData")
+        WAKLogger.d(TAG, "generateClientData")
 
         val data = CollectedClientData(
-            type      = type,
+            type      = type.toString(),
             challenge = challenge,
             origin    = origin
         )
 
-        val json = JSON.stringify(data)
-        val hash = ByteArrayUtil.sha256(json).toUByteArray()
+        val json = encodeJSON(data)
+        val hash = ByteArrayUtil.sha256(json)
 
         return Triple(data, json, hash)
     }
+
+    private fun encodeJSON(data: CollectedClientData): String {
+        return ObjectMapper()
+            .setSerializationInclusion(JsonInclude.Include.NON_NULL)
+            .writeValueAsString(data)
+    }
+
+    override fun onFinish(opType: OperationType, opId: String) {
+        WAKLogger.d(TAG, "operation finished")
+        when (opType) {
+            OperationType.Get -> {
+                if (getOperations.containsKey(opId)) {
+                    getOperations.remove(opId)
+                }
+            }
+            OperationType.Create -> {
+                if (createOperations.containsKey(opId)) {
+                    createOperations.remove(opId)
+                }
+            }
+        }
+    }
+
 }

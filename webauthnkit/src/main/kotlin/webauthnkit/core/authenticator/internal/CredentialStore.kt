@@ -3,19 +3,18 @@ package webauthnkit.core.authenticator.internal
 import android.content.ContentValues
 import android.content.Context
 import android.database.sqlite.SQLiteDatabase
+import android.database.sqlite.SQLiteDatabase.CONFLICT_REPLACE
 import android.database.sqlite.SQLiteOpenHelper
-import kotlinx.serialization.ImplicitReflectionSerializer
-import webauthnkit.core.util.AuthndroidLogger
+import webauthnkit.core.util.WAKLogger
 import webauthnkit.core.util.ByteArrayUtil
 import java.lang.Exception
 
-@ImplicitReflectionSerializer
 @ExperimentalUnsignedTypes
 class CredentialStore(context: Context) {
 
     companion object {
-        val TAG = this::class.simpleName
-        private const val DatabaseName = "authndroid.db"
+        val TAG = CredentialStore::class.simpleName
+        private const val DatabaseName = "webauthnkit.db"
         private const val DatabaseVersion = 1
     }
 
@@ -26,24 +25,24 @@ class CredentialStore(context: Context) {
     )
 
     fun loadAllCredentialSources(rpId: String): List<PublicKeyCredentialSource> {
-        AuthndroidLogger.d(TAG, "loadAllCredentialSource")
+        WAKLogger.d(TAG, "loadAllCredentialSource")
         return db.searchByRpId(rpId)
     }
 
     fun loadAllCredentialSources(rpId: String, userHandle: ByteArray): List<PublicKeyCredentialSource> {
-        AuthndroidLogger.d(TAG, "loadAllCredentialSource")
+        WAKLogger.d(TAG, "loadAllCredentialSource")
         return loadAllCredentialSources(rpId).filter {
             ByteArrayUtil.equals(it.userHandle, userHandle)
         }
     }
 
     fun deleteAllCredentialSources(rpId: String) {
-        AuthndroidLogger.d(TAG, "deleteAllCredentialSource")
+        WAKLogger.d(TAG, "deleteAllCredentialSource")
         db.deleteByRpId(rpId)
     }
 
     fun deleteAllCredentialSources(rpId: String, userHandle: ByteArray) {
-        AuthndroidLogger.d(TAG, "deleteAllCredentialSource")
+        WAKLogger.d(TAG, "deleteAllCredentialSource")
         loadAllCredentialSources(rpId, userHandle).forEach {
             val key = ByteArrayUtil.toHex(it.id)
             db.delete(key)
@@ -51,13 +50,13 @@ class CredentialStore(context: Context) {
     }
 
     fun lookupCredentialSource(credentialId: ByteArray): PublicKeyCredentialSource? {
-        AuthndroidLogger.d(TAG, "lookupCredentialSource")
+        WAKLogger.d(TAG, "lookupCredentialSource")
         val key = ByteArrayUtil.toHex(credentialId)
         return db.findById(key)
     }
 
     fun saveCredentialSource(source: PublicKeyCredentialSource): Boolean {
-        AuthndroidLogger.d(TAG, "saveCredentialSource")
+        WAKLogger.d(TAG, "saveCredentialSource")
 
         val content = source.toBase64()
         return if (content != null) {
@@ -67,7 +66,7 @@ class CredentialStore(context: Context) {
                 content = content
             )
         } else {
-            AuthndroidLogger.d(TAG, "failed to encode content")
+            WAKLogger.d(TAG, "failed to encode content")
             false
         }
     }
@@ -81,7 +80,7 @@ class CredentialStoreDatabaseHelper(
 ): SQLiteOpenHelper(context, name, null, version) {
 
     companion object {
-        private val TAG = this::class.simpleName
+        private val TAG = CredentialStoreDatabaseHelper::class.simpleName
         private const val TableName = "credentials"
         private const val ColumnId       = "id"
         private const val ColumnRpId     = "rp_id"
@@ -110,11 +109,11 @@ class CredentialStoreDatabaseHelper(
 
 
     override fun onUpgrade(db: SQLiteDatabase, oldVer: Int, currentVer: Int) {
-        AuthndroidLogger.w(TAG, "onUpgrade")
+        WAKLogger.w(TAG, "onUpgrade")
     }
 
     fun findById(id: String): PublicKeyCredentialSource? {
-        AuthndroidLogger.w(TAG, "findById")
+        WAKLogger.w(TAG, "findById")
         val db = readableDatabase
         val cursor = db.query(TableName,
             arrayOf(ColumnId, ColumnRpId, ColumnContent),
@@ -129,61 +128,52 @@ class CredentialStoreDatabaseHelper(
                 val content = it.getString(it.getColumnIndex(ColumnContent))
                 PublicKeyCredentialSource.fromBase64(content)
             } else {
-                AuthndroidLogger.w(TAG, "not found")
+                WAKLogger.w(TAG, "not found")
                 null
             }
         }
     }
 
     fun delete(id: String):Boolean {
-        AuthndroidLogger.d(TAG, "delete")
+        WAKLogger.d(TAG, "delete")
         val db = writableDatabase
-        db.beginTransaction()
         return try {
             db.delete(TableName, "$ColumnId = ?", arrayOf(id))
             true
         } catch (e: Exception) {
-            AuthndroidLogger.w(TAG, "failed to delete: " + e.localizedMessage)
+            WAKLogger.w(TAG, "failed to delete: " + e.localizedMessage)
             false
-        } finally {
-            db.endTransaction()
         }
     }
 
     fun deleteByRpId(rpId: String): Boolean {
-        AuthndroidLogger.d(TAG, "deleteByRpId")
+        WAKLogger.d(TAG, "deleteByRpId")
         val db = writableDatabase
-        db.beginTransaction()
 
         return try {
             db.delete(TableName, "$ColumnRpId = ?", arrayOf(rpId))
             true
         } catch (e: Exception) {
-            AuthndroidLogger.w(TAG, "failed to delete: " + e.localizedMessage)
+            WAKLogger.w(TAG, "failed to delete: " + e.localizedMessage)
             false
-        } finally {
-            db.endTransaction()
         }
     }
 
     fun deleteAll(): Boolean {
-        AuthndroidLogger.d(TAG, "deleteAll")
+        WAKLogger.d(TAG, "deleteAll")
         val db = writableDatabase
-        db.beginTransaction()
 
         return try {
             db.delete(TableName, null, null)
             true
         } catch (e: Exception) {
-            AuthndroidLogger.w(TAG, "failed to delete: " + e.localizedMessage)
+            WAKLogger.w(TAG, "failed to delete: " + e.localizedMessage)
             false
-        } finally {
-            db.endTransaction()
         }
     }
 
     fun searchByRpId(rpId: String): List<PublicKeyCredentialSource> {
-        AuthndroidLogger.d(TAG, "searchByRpId")
+        WAKLogger.d(TAG, "searchByRpId: $rpId")
 
         val db = readableDatabase
 
@@ -198,15 +188,18 @@ class CredentialStoreDatabaseHelper(
 
         cursor.use {
 
+            WAKLogger.d(TAG, "searchByRpId: cursor")
+
             val results: MutableList<PublicKeyCredentialSource> = mutableListOf()
 
             while (it.moveToNext()) {
+                WAKLogger.d(TAG, "searchByRpId: iterate")
                 val content = it.getString(it.getColumnIndex(ColumnContent))
                 val source = PublicKeyCredentialSource.fromBase64(content)
                 if (source != null) {
                     results.add(source)
                 } else {
-                    AuthndroidLogger.w(TAG, "invalid format of credential-source")
+                    WAKLogger.w(TAG, "invalid format of credential-source")
                     // XXX should delete this record?
                 }
             }
@@ -216,23 +209,20 @@ class CredentialStoreDatabaseHelper(
     }
 
     fun save(id: String, rpId: String, content: String): Boolean {
-        AuthndroidLogger.d(TAG, "save")
+        WAKLogger.d(TAG, "save $rpId")
 
         val db = writableDatabase
-        db.beginTransaction()
 
         return try {
             val values = ContentValues()
             values.put(ColumnId, id)
             values.put(ColumnRpId, rpId)
             values.put(ColumnContent, content)
-            db.insertOrThrow(TableName, null, values)
+            db.insertWithOnConflict(TableName, null, values, CONFLICT_REPLACE)
             true
         } catch (e: Exception) {
-            AuthndroidLogger.w(TAG, "failed to insert: " + e.localizedMessage)
+            WAKLogger.w(TAG, "failed to insert: " + e.localizedMessage)
             false
-        } finally {
-            db.endTransaction()
         }
     }
 }

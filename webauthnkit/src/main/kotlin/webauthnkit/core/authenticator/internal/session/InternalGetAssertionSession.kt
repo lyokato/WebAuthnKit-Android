@@ -3,26 +3,21 @@ package webauthnkit.core.authenticator.internal.session
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
-import kotlinx.serialization.ImplicitReflectionSerializer
+import webauthnkit.core.*
 
-import webauthnkit.core.ErrorReason
-import webauthnkit.core.PublicKeyCredentialDescriptor
-import webauthnkit.core.AuthenticatorAttachment
-import webauthnkit.core.AuthenticatorTransport
 import webauthnkit.core.authenticator.AuthenticatorAssertionResult
 import webauthnkit.core.authenticator.AuthenticatorData
 import webauthnkit.core.authenticator.GetAssertionSession
 import webauthnkit.core.authenticator.GetAssertionSessionListener
 import webauthnkit.core.authenticator.internal.CredentialStore
 import webauthnkit.core.authenticator.internal.InternalAuthenticatorSetting
-import webauthnkit.core.authenticator.internal.KeySupportChooser
+import webauthnkit.core.authenticator.internal.key.KeySupportChooser
 import webauthnkit.core.authenticator.internal.PublicKeyCredentialSource
 import webauthnkit.core.authenticator.internal.ui.UserConsentUI
-import webauthnkit.core.util.AuthndroidLogger
+import webauthnkit.core.util.WAKLogger
 import webauthnkit.core.util.ByteArrayUtil
 
 @ExperimentalCoroutinesApi
-@ImplicitReflectionSerializer
 @ExperimentalUnsignedTypes
 class InternalGetAssertionSession(
     private val setting:           InternalAuthenticatorSetting,
@@ -32,7 +27,7 @@ class InternalGetAssertionSession(
 ) : GetAssertionSession {
 
     companion object {
-        val TAG = this::class.simpleName
+        val TAG = InternalGetAssertionSession::class.simpleName
     }
 
     private var started = false
@@ -49,40 +44,55 @@ class InternalGetAssertionSession(
 
     override fun getAssertion(
         rpId:                          String,
-        hash:                          UByteArray,
+        hash:                          ByteArray,
         allowCredentialDescriptorList: List<PublicKeyCredentialDescriptor>,
         requireUserPresence:           Boolean,
         requireUserVerification:       Boolean
     ) {
-        AuthndroidLogger.d(TAG, "getAssertion")
+        WAKLogger.d(TAG, "getAssertion")
 
         GlobalScope.launch {
 
-            val sources = gatherCredentialSources(rpId, allowCredentialDescriptorList)
+            val sources =
+                gatherCredentialSources(rpId, allowCredentialDescriptorList)
 
             if (sources.isEmpty()) {
-                AuthndroidLogger.d(TAG, "allowable credential source not found, stop session")
+                WAKLogger.d(TAG, "allowable credential source not found, stop session")
                 stop(ErrorReason.NotAllowed)
                 return@launch
             }
 
             val cred = try {
+                WAKLogger.d(TAG, "request user selection")
                 ui.requestUserSelection(
                     sources                 = sources,
                     requireUserVerification = requireUserVerification
                 )
-            } catch (e: Exception) {
-                // TODO classify error
+            } catch (e: CancelledException) {
+                WAKLogger.d(TAG, "failed to select $e")
                 stop(ErrorReason.Cancelled)
+                return@launch
+            } catch (e: TimeoutException) {
+                WAKLogger.d(TAG, "failed to select $e")
+                stop(ErrorReason.Timeout)
+                return@launch
+            } catch (e: Exception) {
+                WAKLogger.d(TAG, "failed to select $e")
+                stop(ErrorReason.Unknown)
                 return@launch
             }
 
 
             cred.signCount = cred.signCount + setting.counterStep
 
+            WAKLogger.d(TAG, "update credential")
+
             if (!credentialStore.saveCredentialSource(cred)) {
+
+                WAKLogger.d(TAG, "failed to update credential")
                 stop(ErrorReason.Unknown)
                 return@launch
+
             }
 
             val extensions = HashMap<String, Any>()
@@ -90,8 +100,8 @@ class InternalGetAssertionSession(
             val rpIdHash = ByteArrayUtil.sha256(rpId)
 
             val authenticatorData = AuthenticatorData(
-                rpIdHash               = rpIdHash.toUByteArray(),
-                userPresent            = requireUserPresence,
+                rpIdHash               = rpIdHash,
+                userPresent            = (requireUserPresence || requireUserVerification),
                 userVerified           = requireUserVerification,
                 signCount              = cred.signCount.toUInt(),
                 attestedCredentialData = null,
@@ -109,20 +119,25 @@ class InternalGetAssertionSession(
                 stop(ErrorReason.Unknown)
                 return@launch
             }
-            val dataToBeSigned = ByteArrayUtil.merge(authenticatorDataBytes, hash)
 
-            val signature = keySupport.sign(cred.keyLabel, dataToBeSigned.toByteArray())
+            val dataToBeSigned =
+                ByteArrayUtil.merge(authenticatorDataBytes, hash)
+
+            val signature = keySupport.sign(cred.keyLabel, dataToBeSigned)
             if (signature == null) {
                 stop(ErrorReason.Unknown)
                 return@launch
             }
 
+            val credentialId =
+                if (allowCredentialDescriptorList.size != 1) { cred.id } else { null }
+
             val assertion =
                 AuthenticatorAssertionResult(
-                    credentialId      = if (allowCredentialDescriptorList.size == 1) { cred.id.toUByteArray() } else { null },
+                    credentialId      = credentialId,
                     authenticatorData = authenticatorDataBytes,
-                    signature         = signature.toUByteArray(),
-                    userHandle        = cred.userHandle.toUByteArray()
+                    signature         = signature,
+                    userHandle        = cred.userHandle
                 )
 
 
@@ -133,18 +148,18 @@ class InternalGetAssertionSession(
     }
 
     override fun canPerformUserVerification(): Boolean {
-        AuthndroidLogger.d(TAG, "canPerformUserVerification")
+        WAKLogger.d(TAG, "canPerformUserVerification")
         return this.setting.allowUserVerification
     }
 
     override fun start() {
-        AuthndroidLogger.d(TAG, "start")
+        WAKLogger.d(TAG, "start")
         if (stopped) {
-            AuthndroidLogger.d(TAG, "already stopped")
+            WAKLogger.d(TAG, "already stopped")
             return
         }
         if (started) {
-            AuthndroidLogger.d(TAG, "already started")
+            WAKLogger.d(TAG, "already started")
             return
         }
         started = true
@@ -152,28 +167,26 @@ class InternalGetAssertionSession(
     }
 
     override fun cancel(reason: ErrorReason) {
-        AuthndroidLogger.d(TAG, "cancel")
+        WAKLogger.d(TAG, "cancel")
         if (stopped) {
-            AuthndroidLogger.d(TAG, "already stopped")
+            WAKLogger.d(TAG, "already stopped")
             return
         }
-        /* TODO cancel UI
-        if (ui.opened) {
-
+        if (ui.isOpen) {
+            ui.cancel(reason)
             return
         }
-        */
         stop(reason)
     }
 
     private fun stop(reason: ErrorReason) {
-        AuthndroidLogger.d(TAG, "stop")
+        WAKLogger.d(TAG, "stop")
         if (!started) {
-            AuthndroidLogger.d(TAG, "not started")
+            WAKLogger.d(TAG, "not started")
             return
         }
         if (stopped) {
-            AuthndroidLogger.d(TAG, "already stopped")
+            WAKLogger.d(TAG, "already stopped")
             return
         }
         stopped = true
@@ -181,7 +194,7 @@ class InternalGetAssertionSession(
     }
 
     private fun onComplete() {
-        AuthndroidLogger.d(TAG, "onComplete")
+        WAKLogger.d(TAG, "onComplete")
         stopped = true
     }
 
@@ -197,7 +210,7 @@ class InternalGetAssertionSession(
         } else {
 
             allowCredentialDescriptorList.mapNotNull {
-                credentialStore.lookupCredentialSource(it.id.toByteArray())
+                credentialStore.lookupCredentialSource(it.id)
             }
 
         }

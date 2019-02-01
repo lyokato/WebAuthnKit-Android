@@ -6,7 +6,6 @@ import java.nio.ByteBuffer
 import java.security.MessageDigest
 import java.util.*
 
-@ExperimentalUnsignedTypes
 object ByteArrayUtil {
 
     fun sha256(str: String): ByteArray {
@@ -19,11 +18,7 @@ object ByteArrayUtil {
     }
 
     fun encodeBase64URL(bytes: ByteArray): String {
-        return Base64.encodeToString(bytes, Base64.URL_SAFE)
-    }
-
-    fun encodeBase64URL(bytes: UByteArray): String {
-        return encodeBase64URL(bytes.toByteArray())
+        return Base64.encodeToString(bytes, Base64.URL_SAFE or Base64.NO_PADDING or Base64.NO_WRAP)
     }
 
     fun zeroUUIDBytes(): ByteArray {
@@ -40,12 +35,12 @@ object ByteArrayUtil {
         return buf.array()
     }
 
-    fun merge(b1: UByteArray, b2: UByteArray): UByteArray {
+    fun merge(b1: ByteArray, b2: ByteArray): ByteArray {
         val b1l = b1.size
         val b2l = b2.size
-        val result = UByteArray(b1l + b2l)
+        val result = ByteArray(b1l + b2l)
         System.arraycopy(b1, 0, result, 0, b1l)
-        System.arraycopy(b1, 0, result, b1l, b2l)
+        System.arraycopy(b2, 0, result, b1l, b2l)
         return result
     }
 
@@ -62,13 +57,16 @@ object ByteArrayUtil {
         }
     }
 
+    fun fromHex(str: String): ByteArray {
+        return ByteArray(str.length / 2) { str.substring(it * 2, it * 2 + 2).toInt(16).toByte() }
+    }
+
     fun toHex(bytes: ByteArray): String {
         return buildString {
             for (b in bytes) {
-                append(String.format("%02X", b))
+                append(String.format("%02x", b))
             }
         }
-
     }
 
 

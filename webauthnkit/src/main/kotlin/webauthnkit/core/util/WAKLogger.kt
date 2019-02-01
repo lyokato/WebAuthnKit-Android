@@ -2,32 +2,38 @@ package webauthnkit.core.util
 
 import android.util.Log
 
-object AuthndroidLogger {
+object WAKLogger {
+
+    val libraryPart = "WebAuthnKit"
 
     var available: Boolean = false
 
     fun d(tag: String?, msg: String) {
         if (available) {
-            Log.d(tag, msg)
+            Log.d(libraryPart, wrapMessage(tag!!, msg))
         }
     }
 
     fun e(tag: String?, msg: String) {
         if (available) {
-            Log.e(tag, msg)
+            Log.e(libraryPart, wrapMessage(tag!!, msg))
         }
     }
 
     fun i(tag: String?, msg: String) {
         if (available) {
-            Log.i(tag, msg)
+            Log.i(libraryPart, wrapMessage(tag!!, msg))
         }
     }
 
     fun w(tag: String?, msg: String) {
         if (available) {
-            Log.w(tag, msg)
+            Log.w(libraryPart, wrapMessage(tag!!, msg))
         }
+    }
+
+    private fun wrapMessage(klass: String, msg: String): String {
+        return "[$klass] $msg"
     }
 
 }

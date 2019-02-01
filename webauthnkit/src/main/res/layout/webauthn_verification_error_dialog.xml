@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+              android:layout_width="320dp"
+              android:layout_height="match_parent"
+              android:padding="10dp"
+              android:gravity="center"
+              android:background="@drawable/webauthn_dialog_background"
+              android:orientation="vertical">
+
+    <TextView android:id="@+id/webauthn_verification_error_title"
+              android:layout_width="match_parent"
+              android:layout_height="wrap_content"
+              android:padding="10dp"
+              android:text="Unauthorized"
+              android:textStyle="bold"
+              android:textSize="18sp"
+              android:gravity="center"
+              android:textColor="@android:color/black" />
+
+    <TextView android:id="@+id/webauthn_verification_error_reason"
+              android:layout_width="match_parent"
+              android:layout_height="wrap_content"
+              android:padding="10dp"
+              android:text="Canceled"
+              android:textSize="14sp"
+              android:maxLines="3"
+              android:gravity="center"
+              android:textColor="@android:color/black" />
+
+    <LinearLayout android:layout_width="match_parent"
+                  android:layout_height="wrap_content"
+                  android:padding="0dp"
+                  android:gravity="center"
+                  android:background="@android:color/white"
+                  android:orientation="horizontal">
+
+        <Button android:id="@+id/webauthn_verification_error_ok_button"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_margin="6dp"
+                android:lineSpacingExtra="6dp"
+                android:textSize="18sp"
+                android:background="@android:color/white"
+                android:textColor="@android:color/holo_blue_dark"
+                style="?android:attr/borderlessButtonStyle"
+                android:text="OK" />
+
+    </LinearLayout>
+
+</LinearLayout>
