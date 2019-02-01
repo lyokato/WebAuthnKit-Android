@@ -1,5 +1,7 @@
 package webauthnkit.core.authenticator.internal
 
+import androidx.fragment.app.Fragment
+import androidx.fragment.app.FragmentActivity
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 
 import webauthnkit.core.AuthenticatorAttachment
@@ -24,9 +26,10 @@ class InternalAuthenticatorSetting {
 @ExperimentalCoroutinesApi
 @ExperimentalUnsignedTypes
 class InternalAuthenticator(
+    private val activity:          FragmentActivity,
     private val ui:                UserConsentUI,
-    private val credentialStore:   CredentialStore,
-    private val keySupportChooser: KeySupportChooser
+    private val credentialStore:   CredentialStore = CredentialStore(activity),
+    private val keySupportChooser: KeySupportChooser = KeySupportChooser(activity)
 ) : Authenticator {
 
     companion object {

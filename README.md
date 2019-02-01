@@ -5,6 +5,10 @@ This library provides you a way to handle W3C Web Authentication API (a.k.a. Web
 
 ![android_webauthnkit](https://user-images.githubusercontent.com/30877/52110613-81deba80-2644-11e9-8349-db9880127cfe.jpg)
 
+## Version
+
+THIS VERSION IS NOT STABLE YET
+
 ## Installation
 
 WIP

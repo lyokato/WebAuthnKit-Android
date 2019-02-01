@@ -35,16 +35,14 @@ class WebAuthnClient(
         ): WebAuthnClient {
 
             val authenticator = InternalAuthenticator(
-                ui                = ui,
-                credentialStore   = CredentialStore(activity),
-                keySupportChooser = KeySupportChooser(activity)
+                activity = activity,
+                ui       = ui
             )
 
             return WebAuthnClient(
                 origin        = origin,
                 authenticator = authenticator
             )
-
         }
     }
 
