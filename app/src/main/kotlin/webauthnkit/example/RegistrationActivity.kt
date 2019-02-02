@@ -12,7 +12,6 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import org.jetbrains.anko.*
-import org.jetbrains.anko.sdk27.coroutines.onClick
 import webauthnkit.core.*
 import webauthnkit.core.authenticator.COSEAlgorithmIdentifier
 import webauthnkit.core.authenticator.internal.ui.UserConsentUI
