@@ -3,9 +3,14 @@ package webauthnkit.example
 import android.content.Intent
 import android.graphics.Color
 import android.os.Bundle
+import android.view.Menu
+import android.view.MenuItem
+import android.widget.EditText
 import androidx.appcompat.app.AppCompatActivity
 import com.jaredrummler.materialspinner.MaterialSpinner
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.launch
 import org.jetbrains.anko.*
 import org.jetbrains.anko.sdk27.coroutines.onClick
 import webauthnkit.core.AuthenticatorTransport
@@ -27,11 +32,17 @@ class AuthenticationActivity : AppCompatActivity() {
         private val TAG = AuthenticationActivity::class.simpleName
     }
 
+    var relyingPartyField:     EditText? = null
+    var challengeField:        EditText? = null
+    var credIdField:           EditText? = null
+
+    var userVerificationSpinner: MaterialSpinner? = null
+    val userVerificationOptions = listOf("Required", "Preferred", "Discouraged")
+
     override fun onCreate(savedInstanceState: Bundle?) {
         WAKLogger.d(TAG, "onCreate")
         super.onCreate(savedInstanceState)
-
-        val userVerificationOptions = listOf("Required", "Preferred", "Discouraged")
+        title = "AUTHENTICATION"
 
         verticalLayout {
 
@@ -41,31 +52,30 @@ class AuthenticationActivity : AppCompatActivity() {
                 text = "Relying Party"
             }
 
-            val relyingPartyField = editText {
+            relyingPartyField = editText {
                 singleLine = true
             }
-            relyingPartyField.setText("https://example.org")
+            relyingPartyField!!.setText("https://example.org")
 
             textView {
                 text = "Challenge (Hex)"
             }
 
-            val challengeField = editText {
+            challengeField = editText {
                 singleLine = true
             }
-            challengeField.setText("aed9c789543b")
+            challengeField!!.setText("aed9c789543b")
 
             textView {
                 text = "Credential Id (Hex) (Optional)"
             }
 
-            val credIdField = editText {
+            credIdField = editText {
                 singleLine = true
             }
-            credIdField.setText("")
+            credIdField!!.setText("")
 
             val spinnerWidth = 160
-            var userVerificationSpinner: MaterialSpinner? = null
 
             relativeLayout {
 
@@ -104,30 +114,34 @@ class AuthenticationActivity : AppCompatActivity() {
 
                 userVerificationSpinner!!.setItems(userVerificationOptions)
             }
+        }
 
-            button("Authenticate") {
-                onClick {
+    }
 
-                    val relyingParty= relyingPartyField.text.toString()
-                    val credId      = credIdField.text.toString()
-                    val challenge   = challengeField.text.toString()
+    private fun onStartClicked() {
 
-                    val userVerification  =
-                        when (userVerificationOptions[userVerificationSpinner!!.selectedIndex]) {
-                            "Required"    -> { UserVerificationRequirement.Required    }
-                            "Preferred"   -> { UserVerificationRequirement.Preferred   }
-                            "Discouraged" -> { UserVerificationRequirement.Discouraged }
-                            else          -> { UserVerificationRequirement.Preferred   }
-                        }
+        val relyingParty= relyingPartyField!!.text.toString()
+        val credId      = credIdField!!.text.toString()
+        val challenge   = challengeField!!.text.toString()
 
-                    onExecute(
-                        relyingParty     = relyingParty,
-                        challenge        = challenge,
-                        credId           = credId,
-                        userVerification = userVerification
-                    )
-                }
+        val userVerification  =
+            when (userVerificationOptions[userVerificationSpinner!!.selectedIndex]) {
+                "Required"    -> { UserVerificationRequirement.Required    }
+                "Preferred"   -> { UserVerificationRequirement.Preferred   }
+                "Discouraged" -> { UserVerificationRequirement.Discouraged }
+                else          -> { UserVerificationRequirement.Preferred   }
             }
+
+        GlobalScope.launch {
+
+            onExecute(
+                relyingParty     = relyingParty,
+                challenge        = challenge,
+                credId           = credId,
+                userVerification = userVerification
+            )
+
+
         }
 
     }
@@ -163,6 +177,19 @@ class AuthenticationActivity : AppCompatActivity() {
     override fun onStop() {
         WAKLogger.d(TAG, "onStop")
         super.onStop()
+    }
+
+    override fun onCreateOptionsMenu(menu: Menu?): Boolean {
+        menuInflater.inflate(R.menu.authentication_activity_menu, menu)
+        return true
+    }
+
+    override fun onOptionsItemSelected(item: MenuItem): Boolean {
+        if (item.itemId == R.id.webauthn_authentication_start) {
+            onStartClicked()
+            return true
+        }
+        return super.onOptionsItemSelected(item)
     }
 
     var consentUI: UserConsentUI? = null

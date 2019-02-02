@@ -3,9 +3,14 @@ package webauthnkit.example
 import android.content.Intent
 import android.graphics.Color
 import android.os.Bundle
+import android.view.Menu
+import android.view.MenuItem
+import android.widget.EditText
 import androidx.appcompat.app.AppCompatActivity
 import com.jaredrummler.materialspinner.MaterialSpinner
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.launch
 import org.jetbrains.anko.*
 import org.jetbrains.anko.sdk27.coroutines.onClick
 import webauthnkit.core.*
@@ -24,12 +29,24 @@ class RegistrationActivity : AppCompatActivity() {
         private val TAG = RegistrationActivity::class.simpleName
     }
 
+    var userIdField:           EditText? = null
+    var userNameField:         EditText? = null
+    var userDisplayNameField:  EditText? = null
+    var userIconURLField:      EditText? = null
+    var relyingPartyField:     EditText? = null
+    var relyingPartyIconField: EditText? = null
+    var challengeField:        EditText? = null
+
+    var userVerificationSpinner:      MaterialSpinner? = null
+    var attestationConveyanceSpinner: MaterialSpinner? = null
+
+    val userVerificationOptions = listOf("Required", "Preferred", "Discouraged")
+    val attestationConveyanceOptions = listOf("Direct", "Indirect", "None")
+
     override fun onCreate(savedInstanceState: Bundle?) {
 
         super.onCreate(savedInstanceState)
-
-        val userVerificationOptions = listOf("Required", "Preferred", "Discouraged")
-        val attestationConveyanceOptions = listOf("Direct", "Indirect", "None")
+        title = "REGISTRATION"
 
         verticalLayout {
 
@@ -39,67 +56,66 @@ class RegistrationActivity : AppCompatActivity() {
                 text = "User Id"
             }
 
-            val userIdField = editText {
+            userIdField = editText {
                 singleLine = true
             }
-            userIdField.setText("lyokato")
+            userIdField!!.setText("lyokato")
 
             textView {
                 text = "User Name"
             }
 
-            val userNameField = editText {
+            userNameField = editText {
                 singleLine = true
             }
-            userNameField.setText("lyokato")
+            userNameField!!.setText("lyokato")
 
             textView {
                 text = "User Display Name"
             }
 
-            val userDisplayNameField = editText {
+            userDisplayNameField = editText {
                 singleLine = true
             }
-            userDisplayNameField.setText("Lyo Kato")
+            userDisplayNameField!!.setText("Lyo Kato")
 
             textView {
                 text = "User ICON URL (Optional)"
             }
 
-            val userIconURLField = editText {
+            userIconURLField = editText {
                 singleLine = true
             }
-            userIconURLField.setText("https://www.gravatar.com/avatar/0b63462eb18efbfb764b0c226abff4a0?s=440&d=retro")
+            userIconURLField!!.setText("https://www.gravatar.com/avatar/0b63462eb18efbfb764b0c226abff4a0?s=440&d=retro")
 
             textView {
                 text = "Relying Party"
             }
 
-            val relyingPartyField = editText {
+            relyingPartyField = editText {
                 singleLine = true
             }
-            relyingPartyField.setText("https://example.org")
+            relyingPartyField!!.setText("https://example.org")
 
             textView {
                 text = "Relying Party ICON"
             }
 
-            val relyingPartyICONField = editText {
+            relyingPartyIconField = editText {
                 singleLine = true
             }
-            relyingPartyICONField.setText("https://developers.google.com/identity/images/g-logo.png")
+            relyingPartyIconField!!.setText("https://developers.google.com/identity/images/g-logo.png")
 
             textView {
                 text = "Challenge (Hex)"
             }
 
-            val challengeField = editText {
+            challengeField = editText {
                 singleLine = true
             }
-            challengeField.setText("aed9c789543b")
+            challengeField!!.setText("aed9c789543b")
 
             val spinnerWidth = 160
-            var userVerificationSpinner: MaterialSpinner? = null
 
             relativeLayout {
 
@@ -139,8 +155,6 @@ class RegistrationActivity : AppCompatActivity() {
                 userVerificationSpinner!!.setItems(userVerificationOptions)
             }
 
-            var attestationConveyanceSpinner: MaterialSpinner? = null
-
             relativeLayout {
 
                 lparams {
@@ -179,50 +193,52 @@ class RegistrationActivity : AppCompatActivity() {
                 attestationConveyanceSpinner!!.setItems(attestationConveyanceOptions)
             }
 
-            button("Register") {
+        }
 
-                onClick {
+    }
 
-                    // TODO validation
-                    val userId          = userIdField.text.toString()
-                    val username        = userNameField.text.toString()
-                    val userDisplayName = userDisplayNameField.text.toString()
-                    val userIconURL     = userIconURLField.text.toString()
-                    val relyingParty    = relyingPartyField.text.toString()
-                    val relyingPartyICON= relyingPartyICONField.text.toString()
-                    val challenge       = challengeField.text.toString()
+    private fun onStartClicked() {
 
-                    val userVerification  =
-                        when (userVerificationOptions[userVerificationSpinner!!.selectedIndex]) {
-                            "Required"    -> { UserVerificationRequirement.Required    }
-                            "Preferred"   -> { UserVerificationRequirement.Preferred   }
-                            "Discouraged" -> { UserVerificationRequirement.Discouraged }
-                            else          -> { UserVerificationRequirement.Preferred   }
-                        }
-                    val attestationConveyance =
-                        when (attestationConveyanceOptions[attestationConveyanceSpinner!!.selectedIndex]) {
-                            "Direct"   -> { AttestationConveyancePreference.Direct   }
-                            "Indirect" -> { AttestationConveyancePreference.Indirect }
-                            "None"     -> { AttestationConveyancePreference.None     }
-                            else       -> { AttestationConveyancePreference.Direct   }
-                        }
+        // TODO validation
+        val userId          = userIdField!!.text.toString()
+        val username        = userNameField!!.text.toString()
+        val userDisplayName = userDisplayNameField!!.text.toString()
+        val userIconURL     = userIconURLField!!.text.toString()
+        val relyingParty    = relyingPartyField!!.text.toString()
+        val relyingPartyICON= relyingPartyIconField!!.text.toString()
+        val challenge       = challengeField!!.text.toString()
 
-
-                    onExecute(
-                        userId                = userId,
-                        username              = username,
-                        userDisplayName       = userDisplayName,
-                        userIconURL           = userIconURL,
-                        relyingParty          = relyingParty,
-                        relyingPartyICON      = relyingPartyICON,
-                        challenge             = challenge,
-                        userVerification      = userVerification,
-                        attestationConveyance = attestationConveyance
-                    )
-
-                }
-
+        val userVerification  =
+            when (userVerificationOptions[userVerificationSpinner!!.selectedIndex]) {
+                "Required"    -> { UserVerificationRequirement.Required    }
+                "Preferred"   -> { UserVerificationRequirement.Preferred   }
+                "Discouraged" -> { UserVerificationRequirement.Discouraged }
+                else          -> { UserVerificationRequirement.Preferred   }
             }
+        val attestationConveyance =
+            when (attestationConveyanceOptions[attestationConveyanceSpinner!!.selectedIndex]) {
+                "Direct"   -> { AttestationConveyancePreference.Direct   }
+                "Indirect" -> { AttestationConveyancePreference.Indirect }
+                "None"     -> { AttestationConveyancePreference.None     }
+                else       -> { AttestationConveyancePreference.Direct   }
+            }
+
+        GlobalScope.launch {
+
+            onExecute(
+                userId                = userId,
+                username              = username,
+                userDisplayName       = userDisplayName,
+                userIconURL           = userIconURL,
+                relyingParty          = relyingParty,
+                relyingPartyICON      = relyingPartyICON,
+                challenge             = challenge,
+                userVerification      = userVerification,
+                attestationConveyance = attestationConveyance
+            )
+
+
+
         }
 
     }
@@ -260,6 +276,19 @@ class RegistrationActivity : AppCompatActivity() {
     override fun onStop() {
         WAKLogger.d(TAG, "onStop")
         super.onStop()
+    }
+
+    override fun onCreateOptionsMenu(menu: Menu): Boolean {
+        menuInflater.inflate(R.menu.registration_activity_menu, menu)
+        return true
+    }
+
+    override fun onOptionsItemSelected(item: MenuItem): Boolean {
+        if (item.itemId == R.id.webauthn_registration_start) {
+            onStartClicked()
+            return true
+        }
+        return super.onOptionsItemSelected(item)
     }
 
     var consentUI: UserConsentUI? = null
