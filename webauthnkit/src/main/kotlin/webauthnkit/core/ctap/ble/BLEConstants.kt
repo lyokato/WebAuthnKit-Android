@@ -27,14 +27,14 @@ enum class BLECommandType(val rawValue: Int) {
 
 }
 
-enum class BLEStatus(val rawValue: Int) {
+enum class BLEKeepAliveStatus(val rawValue: Int) {
 
     Processing(0x01),
     UPNeeded(0x02),
     RFU(0x00);
 
     companion object {
-        fun fromByte(byte: Byte): BLEStatus? {
+        fun fromByte(byte: Byte): BLEKeepAliveStatus? {
             return when (byte.toInt()) {
                 0x01 -> Processing
                 0x02 -> UPNeeded

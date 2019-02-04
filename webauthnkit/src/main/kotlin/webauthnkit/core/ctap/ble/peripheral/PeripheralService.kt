@@ -19,7 +19,7 @@ open class PeripheralService(val uuidString: String) {
         val TAG = PeripheralService::class.simpleName
     }
 
-    fun init() {
+    protected fun init() {
         // template method
     }
 
