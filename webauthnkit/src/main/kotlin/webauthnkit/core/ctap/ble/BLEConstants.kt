@@ -1,29 +1,5 @@
 package webauthnkit.core.ctap.ble
 
-import java.util.*
-
-enum class BLEServiceUUID(val rawValue: String) {
-
-    FIDO("0xFFFD");
-
-    fun toUUID(): UUID {
-        return UUID.fromString(rawValue)
-    }
-}
-
-enum class BLECharacteristicUUID(val rawValue: String) {
-
-    FIDOControlPoint("F1D0FFF1-DEAA-ECEE-B42F-C9BA7ED623BB"),
-    FIDOStatus("F1D0FFF2-DEAA-ECEE-B42F-C9BA7ED623BB"),
-    FIDOControlPointLength("F1D0FFF3-DEAA-ECEE-B42F-C9BA7ED623BB"),
-    FIDOServiceRevisionBitfield("F1D0FFF4-DEAA-ECEE-B42F-C9BA7ED623BB"),
-    FIDOServiceRevision("0x2A28");
-
-    fun toUUID(): UUID {
-        return UUID.fromString(rawValue)
-    }
-}
-
 enum class BLECommandType(val rawValue: Int) {
 
     Ping(0x81),

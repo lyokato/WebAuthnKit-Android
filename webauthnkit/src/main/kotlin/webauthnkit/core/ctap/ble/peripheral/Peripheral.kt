@@ -12,22 +12,21 @@ import webauthnkit.core.ctap.ble.BLEEvent
 import webauthnkit.core.util.WAKLogger
 import java.util.*
 
+interface PeripheralListener {
+    fun onAdvertiseSuccess(settingsInEffect: AdvertiseSettings)
+    fun onAdvertiseFailure(errorCode: Int)
+    fun onConnectionStateChange(device: BluetoothDevice, status: Int, newState: Int)
+}
+
 class Peripheral(
     private val context:  Context,
     private val service:  PeripheralService,
-    private var listener: Listener?
+    private var listener: PeripheralListener?
 ) {
 
     companion object {
         val TAG = Peripheral::class.simpleName
     }
-
-    interface Listener {
-        fun onAdvertiseSuccess(settingsInEffect: AdvertiseSettings)
-        fun onAdvertiseFailure(errorCode: Int)
-        fun onConnectionStateChange(device: BluetoothDevice, status: Int, newState: Int)
-    }
-
 
     private var running: Boolean = false
     private var manager: BluetoothManager? = context.getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager?
@@ -117,6 +116,17 @@ class Peripheral(
             WAKLogger.d(TAG, "not running")
             return
         }
+
+        rawServer?.let {
+            it.clearServices()
+            it.close()
+        }
+        rawServer = null
+
+        advertiser?.stopAdvertising(advertiseCallback)
+        advertiser = null
+
+        running = false
     }
 
     private fun createAdvertiseData(): AdvertiseData {
@@ -166,7 +176,7 @@ class Peripheral(
                 val res = ReadResponse(req)
 
                 val serviceUUID = characteristic.service.uuid
-                if (serviceUUID.toString() == service.uuid.toString()) {
+                if (serviceUUID.toString() == service.uuidString) {
                     if (service.canHandle(BLEEvent.READ, req.uuid)) {
                         service.dispatchReadRequest(req, res)
                     }
@@ -191,7 +201,7 @@ class Peripheral(
                 val res = WriteResponse(req)
 
                 val serviceUUID = characteristic.service.uuid
-                if (serviceUUID.toString() == service.uuid.toString()) {
+                if (serviceUUID.toString() == service.uuidString) {
                     if (service.canHandle(BLEEvent.WRITE, req.uuid)) {
                         service.dispatchWriteRequest(req, res)
                     }
@@ -238,7 +248,7 @@ class Peripheral(
 
                     WAKLogger.d(TAG, "onDescriptionWriteRequest: $chUUID")
 
-                    if (service.uuid.toString() == serviceUUID.toString()) {
+                    if (service.uuidString == serviceUUID.toString()) {
                         service.rememberDeviceForNotification(device, chUUID.toString())
                     }
 

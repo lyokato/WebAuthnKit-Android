@@ -11,7 +11,9 @@ import java.lang.reflect.Method
 import java.util.*
 
 
-class PeripheralService(val uuid: UUID) {
+open class PeripheralService(val uuidString: String) {
+
+    val uuid = UUID.fromString(uuidString)
 
     companion object {
         val TAG = PeripheralService::class.simpleName
