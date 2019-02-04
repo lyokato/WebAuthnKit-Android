@@ -11,4 +11,6 @@ class WriteRequest(
     val preparedWrite:  Boolean,
     val responseNeeded: Boolean,
     val value:          ByteArray
-)
+) {
+    val uuid = characteristic.uuid.toString()
+}

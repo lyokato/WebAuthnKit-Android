@@ -9,7 +9,7 @@ import java.lang.reflect.Method
 import java.util.*
 
 class Characteristic(
-    val uuid: UUID
+    val uuid: String
 ) {
     companion object {
         val TAG = Characteristic::class.simpleName
@@ -45,6 +45,10 @@ class Characteristic(
         return handlers.containsKey(event)
     }
 
+    fun addHandler(event: BLEEvent, handler: Method) {
+        handlers[event] = handler
+    }
+
     fun handleReadRequest(parent: PeripheralService, req: ReadRequest, res: ReadResponse) {
         if (canHandle(BLEEvent.READ)) {
             val method = handlers.getValue(BLEEvent.READ)
@@ -70,7 +74,7 @@ class Characteristic(
     }
 
     internal fun createRaw(): BluetoothGattCharacteristic {
-        val ch = BluetoothGattCharacteristic(uuid, properties, permission)
+        val ch = BluetoothGattCharacteristic(UUID.fromString(uuid), properties, permission)
         if ((properties and BluetoothGattCharacteristic.PROPERTY_NOTIFY) == BluetoothGattCharacteristic.PROPERTY_NOTIFY) {
             // TODO need PERMISSION_READ_ENCRYPT?
             val descriptor = BluetoothGattDescriptor(
