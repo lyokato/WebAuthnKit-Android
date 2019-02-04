@@ -1,5 +1,6 @@
 package webauthnkit.core.ctap.ble.peripheral
 
+import webauthnkit.core.ctap.ble.BLEEvent
 import java.util.*
 
 

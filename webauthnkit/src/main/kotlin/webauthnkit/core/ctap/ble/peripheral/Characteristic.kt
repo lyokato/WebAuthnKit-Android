@@ -3,6 +3,7 @@ package webauthnkit.core.ctap.ble.peripheral
 import android.bluetooth.BluetoothDevice
 import android.bluetooth.BluetoothGattCharacteristic
 import android.bluetooth.BluetoothGattDescriptor
+import webauthnkit.core.ctap.ble.BLEEvent
 import webauthnkit.core.util.WAKLogger
 import java.lang.reflect.Method
 import java.util.*
