@@ -8,8 +8,7 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import webauthnkit.core.PublicKeyCredentialCreationOptions
-import webauthnkit.core.PublicKeyCredentialRequestOptions
+import webauthnkit.core.data.*
 import webauthnkit.core.authenticator.GetAssertionSession
 import webauthnkit.core.client.WebAuthnClient
 import webauthnkit.core.ctap.CTAPCommandType
@@ -152,11 +151,15 @@ class BLEFIDOService(
             return
         }
 
-        val command = value[0].toInt()
+        val command = CTAPCommandType.fromByte(value[0])
+        if (command == null) {
+            handleCTAPUnsupportedCommand()
+            return
+        }
 
         when (command) {
 
-            CTAPCommandType.MakeCredential.rawValue -> {
+            CTAPCommandType.MakeCredential -> {
                 if (value.size < 2) {
                     closeByBLEError(BLEErrorType.InvalidLen)
                     return
@@ -164,7 +167,7 @@ class BLEFIDOService(
                 handleCTAPMakeCredential(value.sliceArray(0..value.size))
             }
 
-            CTAPCommandType.GetAssertion.rawValue -> {
+            CTAPCommandType.GetAssertion -> {
                 if (value.size < 2) {
                     closeByBLEError(BLEErrorType.InvalidLen)
                     return
@@ -172,11 +175,11 @@ class BLEFIDOService(
                 handleCTAPGetAssertion(value.sliceArray(0..value.size))
             }
 
-            CTAPCommandType.GetNextAssertion.rawValue -> {
+            CTAPCommandType.GetNextAssertion -> {
                 handleCTAPGetNextAssertion()
             }
 
-            CTAPCommandType.ClientPIN.rawValue -> {
+            CTAPCommandType.ClientPIN -> {
                 if (value.size < 2) {
                     closeByBLEError(BLEErrorType.InvalidLen)
                     return
@@ -184,17 +187,14 @@ class BLEFIDOService(
                 handleCTAPClientPIN(value.sliceArray(0..value.size))
             }
 
-            CTAPCommandType.GetInfo.rawValue -> {
+            CTAPCommandType.GetInfo -> {
                 handleCTAPGetInfo()
             }
 
-            CTAPCommandType.Reset.rawValue -> {
+            CTAPCommandType.Reset -> {
                 handleCTAPReset()
             }
 
-            else -> {
-                handleCTAPUnsupportedCommand()
-            }
         }
     }
 
@@ -211,11 +211,54 @@ class BLEFIDOService(
 
     private fun handleCTAPMakeCredential(value: ByteArray) {
         WAKLogger.d(TAG, "handleCTAP: MakeCredential")
+
         val params = CBORReader(value).readStringKeyMap()
         if (params == null) {
             closeByBLEError(BLEErrorType.InvalidPar)
             return
         }
+
+        if (!params.containsKey("clientDataHash")) {
+            closeByBLEError(BLEErrorType.InvalidPar)
+            return
+        }
+        if (params["clientDataHash"] is ByteArray) {
+            closeByBLEError(BLEErrorType.InvalidPar)
+            return
+        }
+        var clientDataHash = params["clientDataHash"] as ByteArray
+
+        if (!params.containsKey("rp")) {
+            closeByBLEError(BLEErrorType.InvalidPar)
+            return
+        }
+        if (params["rp"] is Map<*,*>) {
+            closeByBLEError(BLEErrorType.InvalidPar)
+            return
+        }
+        var rp = params["rp"] as Map<String, Any>
+
+        if (!params.containsKey("user")) {
+            closeByBLEError(BLEErrorType.InvalidPar)
+            return
+        }
+        if (params["user"] is Map<*,*>) {
+            closeByBLEError(BLEErrorType.InvalidPar)
+            return
+        }
+        var user = params["user"] as Map<String, Any>
+
+        params["pubKeyCredParams"]
+
+        // params["excludeList"] optional
+        // params["extensions"]
+
+        if (params.contains("options")) {
+
+        }
+
+        // params["pinAuth"] optional
+        // params["pinProtocol"] optional
 
         val options = PublicKeyCredentialCreationOptions()
         // TODO parameter validation, and build option

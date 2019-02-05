@@ -9,6 +9,20 @@ enum class CTAPCommandType(val rawValue: Int) {
    Reset(0x07),
    GetNextAssertion(0x08);
 
+   companion object {
+       fun fromByte(byte: Byte): CTAPCommandType? {
+          return when (byte.toInt()) {
+             0x01 -> MakeCredential
+             0x02 -> GetAssertion
+             0x04 -> GetInfo
+             0x06 -> ClientPIN
+             0x07 -> Reset
+             0x08 -> GetNextAssertion
+             else -> null
+          }
+       }
+   }
+
    fun toByte(): Byte {
       return rawValue.toByte()
    }

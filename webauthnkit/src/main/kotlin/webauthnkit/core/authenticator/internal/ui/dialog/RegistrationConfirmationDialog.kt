@@ -16,8 +16,7 @@ import com.bumptech.glide.load.MultiTransformation
 import com.bumptech.glide.load.resource.bitmap.CenterCrop
 import com.bumptech.glide.load.resource.bitmap.RoundedCorners
 import com.bumptech.glide.request.RequestOptions
-import webauthnkit.core.PublicKeyCredentialRpEntity
-import webauthnkit.core.PublicKeyCredentialUserEntity
+import webauthnkit.core.data.*
 import webauthnkit.core.R
 import webauthnkit.core.authenticator.internal.ui.UserConsentUIConfig
 import webauthnkit.core.util.WAKLogger

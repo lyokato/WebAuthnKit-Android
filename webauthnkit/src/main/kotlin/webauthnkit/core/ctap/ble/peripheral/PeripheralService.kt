@@ -4,7 +4,7 @@ import android.bluetooth.BluetoothDevice
 import android.bluetooth.BluetoothGattCharacteristic
 import android.bluetooth.BluetoothGattServer
 import android.bluetooth.BluetoothGattService
-import webauthnkit.core.InvalidStateException
+import webauthnkit.core.error.InvalidStateException
 import webauthnkit.core.ctap.ble.BLEEvent
 import webauthnkit.core.ctap.ble.peripheral.annotation.*
 import webauthnkit.core.util.WAKLogger
