@@ -6,8 +6,12 @@ import android.bluetooth.le.AdvertiseSettings
 import android.content.Context
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import webauthnkit.core.authenticator.internal.InternalAuthenticator
+import webauthnkit.core.PublicKeyCredentialCreationOptions
+import webauthnkit.core.PublicKeyCredentialRequestOptions
+import webauthnkit.core.authenticator.GetAssertionSession
+import webauthnkit.core.client.WebAuthnClient
 import webauthnkit.core.ctap.CTAPCommandType
 import webauthnkit.core.ctap.ble.frame.FrameBuffer
 import webauthnkit.core.ctap.ble.frame.FrameSplitter
@@ -27,13 +31,14 @@ interface BLEFIDOServiceListener {
 @ExperimentalCoroutinesApi
 @ExperimentalUnsignedTypes
 class BLEFIDOService(
-    private val context:       Context,
-    private val authenticator: InternalAuthenticator,
-    private val listener:      BLEFIDOServiceListener?
+    private val context:  Context,
+    private val client:   WebAuthnClient,
+    private val listener: BLEFIDOServiceListener?
 ) {
-
+    var intervalDelayTimeMillis: Long = 50
+    var maxPacketDataSize: Int = 20
     var timeoutSeconds: Long = 60
-    var lockedByDevice: String? = null
+    private var lockedByDevice: String? = null
 
     companion object {
         val TAG = BLEFIDOService::class.simpleName
@@ -72,7 +77,9 @@ class BLEFIDOService(
 
         override fun onMtuChanged(device: BluetoothDevice, mtu: Int) {
             WAKLogger.d(TAG, "onMtuChanged")
-            // TODO only for current session
+            if (isLockedBy(device.address)) {
+                maxPacketDataSize = mtu - 3
+            }
         }
     }
 
@@ -127,6 +134,7 @@ class BLEFIDOService(
 
     private fun handleBLECancel() {
         WAKLogger.d(TAG, "handleBLE: Cancel")
+        // TODO if active session exists, stop them.
     }
 
     private fun handleBLEKeepAlive(value: ByteArray) {
@@ -199,6 +207,8 @@ class BLEFIDOService(
         WAKLogger.d(TAG, "handleBLE: Ping")
     }
 
+    private var isInSession: Boolean = false
+
     private fun handleCTAPMakeCredential(value: ByteArray) {
         WAKLogger.d(TAG, "handleCTAP: MakeCredential")
         val params = CBORReader(value).readStringKeyMap()
@@ -206,7 +216,32 @@ class BLEFIDOService(
             closeByBLEError(BLEErrorType.InvalidPar)
             return
         }
+
+        val options = PublicKeyCredentialCreationOptions()
+        // TODO parameter validation, and build option
+
+        if (isInSession) {
+            WAKLogger.d(TAG, "handleCTAP: MakeCredential - already in session")
+            return
+        }
+
+        isInSession = true
+
+
+        GlobalScope.launch {
+            try {
+                val cred = client.create(options)
+                // val cbor = buildResponseCBOR(cred)
+                // handleResponse(MSG, cbor)
+            } catch (e: Exception) {
+                // Processing Error
+            } finally {
+                isInSession = false
+            }
+        }
     }
+
+    private var getAssertionSession: GetAssertionSession? = null
 
     private fun handleCTAPGetAssertion(value: ByteArray) {
         WAKLogger.d(TAG, "handleCTAP: GetAssertion")
@@ -214,6 +249,28 @@ class BLEFIDOService(
         if (params == null) {
             closeByBLEError(BLEErrorType.InvalidPar)
             return
+        }
+
+        val options = PublicKeyCredentialRequestOptions()
+        // TODO parameter validation, and build option
+
+        if (isInSession) {
+            WAKLogger.d(TAG, "handleCTAP: GetAssertion - already in session")
+            return
+        }
+
+        isInSession = true
+
+        GlobalScope.launch {
+            try {
+                val assertion = client.get(options)
+                // val cbor = buildResponseCBOR(assertion)
+                // handleResponse(MSG, cbor)
+            } catch (e: Exception) {
+                // Processing Error
+            } finally {
+                isInSession = false
+            }
         }
     }
 
@@ -240,25 +297,36 @@ class BLEFIDOService(
         // info["maxMsgSize"] = maxMsgSize
         // info["extensions"]  // currently this library doesn't support any extensions
 
-        val cbor = CBORWriter().putStringKeyMap(info).compute()
-        handleResponse(BLECommandType.MSG, cbor)
+        val value = CBORWriter().putStringKeyMap(info).compute()
+        handleResponse(BLECommandType.MSG, value)
     }
 
     private var peripheral: Peripheral? = null
 
     private fun handleResponse(command: BLECommandType, value: ByteArray) {
+
+        WAKLogger.d(TAG, "handleResponse")
+
         val (first, rest) =
-            FrameSplitter(maxPacketDataSize = 20).split(command, value)
+            FrameSplitter(maxPacketDataSize).split(command, value)
 
-        sendResultAsNotification(first.toByteArray())
+        GlobalScope.launch {
 
-        rest.forEach {
-            // TODO delay(50ms)
-            sendResultAsNotification(it.toByteArray())
+            sendResultAsNotification(first.toByteArray())
+
+            rest.forEach {
+                delay(intervalDelayTimeMillis)
+                sendResultAsNotification(it.toByteArray())
+            }
+
         }
+
     }
 
     private fun sendResultAsNotification(value: ByteArray) {
+
+        WAKLogger.d(TAG, "sendResultAsNotification")
+
         peripheral?.notifyValue(
                 "0xFFFD",
                 "F1D0FFF1-DEAA-ECEE-B42F-C9BA7ED623BB",
@@ -288,22 +356,30 @@ class BLEFIDOService(
     }
 
     private fun closeByBLEError(error: BLEErrorType) {
+
+        WAKLogger.d(TAG, "closeByBLEError")
+
         val b1 = (error.rawValue and 0x0000_ff00).shr(8).toByte()
         val b2= (error.rawValue and 0x0000_00ff).toByte()
         val value = byteArrayOf(b1, b2)
 
         val (first, rest) =
-            FrameSplitter(maxPacketDataSize = 20).split(BLECommandType.Error, value)
+            FrameSplitter(maxPacketDataSize).split(BLECommandType.Error, value)
 
-        sendResultAsNotification(first.toByteArray())
+        GlobalScope.launch {
 
-        rest.forEach {
-            // TODO delay(50ms)
-            sendResultAsNotification(it.toByteArray())
+            sendResultAsNotification(first.toByteArray())
+
+            rest.forEach {
+                delay(intervalDelayTimeMillis)
+                sendResultAsNotification(it.toByteArray())
+            }
+
+            delay(intervalDelayTimeMillis)
+            close()
+
         }
 
-        // delay 10ms
-        close()
     }
 
     var closed = false
@@ -316,6 +392,8 @@ class BLEFIDOService(
             WAKLogger.d(TAG, "already closed")
             return
         }
+
+        closed = true
 
         stopTimer()
 
@@ -378,7 +456,9 @@ class BLEFIDOService(
                     res.status = BluetoothGatt.GATT_FAILURE
                     return
                 }
-                // TODO obtain MTU
+                val b1 = (maxPacketDataSize and 0x0000_ff00).shr(8).toByte()
+                val b2 = (maxPacketDataSize and 0x0000_00ff).toByte()
+                res.write(byteArrayOf(b1, b2))
             }
 
             @OnWrite("F1D0FFF4-DEAA-ECEE-B42F-C9BA7ED623BB")
