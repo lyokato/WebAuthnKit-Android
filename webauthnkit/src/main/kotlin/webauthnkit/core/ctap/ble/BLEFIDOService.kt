@@ -13,6 +13,7 @@ import webauthnkit.core.ctap.CTAPStatusCode
 import webauthnkit.core.ctap.ble.frame.FrameBuffer
 import webauthnkit.core.ctap.ble.peripheral.*
 import webauthnkit.core.ctap.ble.peripheral.annotation.*
+import webauthnkit.core.util.CBORReader
 import webauthnkit.core.util.WAKLogger
 
 @ExperimentalCoroutinesApi
@@ -122,11 +123,20 @@ class BLEFIDOService(
 
     private fun handleCTAPMakeCredential(value: ByteArray) {
         WAKLogger.d(TAG, "handleCTAP: MakeCredential")
+        val params = CBORReader(value).readStringKeyMap()
+        if (params == null) {
+            closeByError(CTAPStatusCode.InvalidCBOR)
+            return
+        }
     }
 
     private fun handleCTAPGetAssertion(value: ByteArray) {
         WAKLogger.d(TAG, "handleCTAP: GetAssertion")
-
+        val params = CBORReader(value).readStringKeyMap()
+        if (params == null) {
+            closeByError(CTAPStatusCode.InvalidCBOR)
+            return
+        }
     }
 
     private fun handleCTAPGetInfo() {
