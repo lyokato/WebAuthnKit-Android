@@ -9,19 +9,31 @@ import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import webauthnkit.core.authenticator.internal.InternalAuthenticator
 import webauthnkit.core.ctap.CTAPCommandType
-import webauthnkit.core.ctap.CTAPStatusCode
 import webauthnkit.core.ctap.ble.frame.FrameBuffer
+import webauthnkit.core.ctap.ble.frame.FrameSplitter
 import webauthnkit.core.ctap.ble.peripheral.*
 import webauthnkit.core.ctap.ble.peripheral.annotation.*
 import webauthnkit.core.util.CBORReader
+import webauthnkit.core.util.CBORWriter
 import webauthnkit.core.util.WAKLogger
+import java.util.*
+
+interface BLEFIDOServiceListener {
+    fun onConnected(address: String)
+    fun onDisconnected(address: String)
+    fun onClosed()
+}
 
 @ExperimentalCoroutinesApi
 @ExperimentalUnsignedTypes
 class BLEFIDOService(
     private val context:       Context,
-    private val authenticator: InternalAuthenticator
+    private val authenticator: InternalAuthenticator,
+    private val listener:      BLEFIDOServiceListener?
 ) {
+
+    var timeoutSeconds: Long = 60
+    var lockedByDevice: String? = null
 
     companion object {
         val TAG = BLEFIDOService::class.simpleName
@@ -35,15 +47,75 @@ class BLEFIDOService(
 
         override fun onAdvertiseFailure(errorCode: Int) {
             WAKLogger.d(TAG, "onAdvertiseFailure: $errorCode")
+            close()
         }
 
-        override fun onConnectionStateChange(device: BluetoothDevice, status: Int, newState: Int) {
-            WAKLogger.d(TAG, "onConnectionStateChange")
+        override fun onConnected(address: String) {
+            WAKLogger.d(TAG, "onConnected: $address")
+
+            if (lockedByDevice == null) {
+                lockedByDevice = address
+                listener?.onConnected(address)
+            } else {
+                WAKLogger.d(TAG, "onConnected: this device is already locked by $lockedByDevice")
+            }
+        }
+
+        override fun onDisconnected(address: String) {
+            WAKLogger.d(TAG, "onDisconnected: $address")
+
+            if (isLockedBy(address)) {
+                listener?.onDisconnected(address)
+                close()
+            }
+        }
+
+        override fun onMtuChanged(device: BluetoothDevice, mtu: Int) {
+            WAKLogger.d(TAG, "onMtuChanged")
+            // TODO only for current session
         }
     }
 
-    private fun handleCommand(command: BLECommandType, data: ByteArray) {
+    private fun isLockedBy(deviceAddress: String): Boolean {
+        return (lockedByDevice != null && lockedByDevice == deviceAddress)
+    }
 
+    private var timer: Timer? = null
+
+    fun start() {
+        this.peripheral = createPeripheral()
+        peripheral!!.start()
+    }
+
+    fun stop() {
+        close()
+    }
+
+    private fun startTimer() {
+        WAKLogger.d(TAG, "startTimer")
+        stopTimer()
+        timer = Timer()
+        timer!!.schedule(object: TimerTask(){
+            override fun run() {
+                timer = null
+                onTimeout()
+            }
+        }, timeoutSeconds)
+    }
+
+    private fun stopTimer() {
+        WAKLogger.d(TAG, "stopTimer")
+        timer?.cancel()
+        timer = null
+    }
+
+    private fun onTimeout() {
+        WAKLogger.d(TAG, "onTimeout")
+        stopTimer()
+        closeByBLEError(BLEErrorType.ReqTimeout)
+    }
+
+    private fun handleCommand(command: BLECommandType, data: ByteArray) {
         when (command) {
             BLECommandType.Cancel    -> { handleBLECancel()        }
             BLECommandType.MSG       -> { handleBLEMSG(data)       }
@@ -60,50 +132,58 @@ class BLEFIDOService(
     private fun handleBLEKeepAlive(value: ByteArray) {
         WAKLogger.d(TAG, "handleBLE: KeepAlive")
         WAKLogger.d(TAG, "should be authenticator -> client")
-        // TODO better closing step
-        // closeByError(InvalidOperation)
-        close()
+        closeByBLEError(BLEErrorType.InvalidCmd)
     }
 
     private fun handleBLEMSG(value: ByteArray) {
+
         WAKLogger.d(TAG, "handleBLE: MSG")
-        if (value.size < 1) {
-            // closeByError(NoEnoughSize)
+
+        if (value.isEmpty()) {
+            closeByBLEError(BLEErrorType.InvalidLen)
             return
         }
+
         val command = value[0].toInt()
+
         when (command) {
+
             CTAPCommandType.MakeCredential.rawValue -> {
                 if (value.size < 2) {
-                    // closeByError(NoEnoughSize)
+                    closeByBLEError(BLEErrorType.InvalidLen)
                     return
                 }
                 handleCTAPMakeCredential(value.sliceArray(0..value.size))
             }
+
             CTAPCommandType.GetAssertion.rawValue -> {
                 if (value.size < 2) {
-                    // closeByError(NoEnoughSize)
+                    closeByBLEError(BLEErrorType.InvalidLen)
                     return
                 }
                 handleCTAPGetAssertion(value.sliceArray(0..value.size))
             }
+
             CTAPCommandType.GetNextAssertion.rawValue -> {
                 handleCTAPGetNextAssertion()
             }
+
             CTAPCommandType.ClientPIN.rawValue -> {
-                // unsupported
                 if (value.size < 2) {
-                    // closeByError(NoEnoughSize)
+                    closeByBLEError(BLEErrorType.InvalidLen)
                     return
                 }
                 handleCTAPClientPIN(value.sliceArray(0..value.size))
             }
+
             CTAPCommandType.GetInfo.rawValue -> {
                 handleCTAPGetInfo()
             }
+
             CTAPCommandType.Reset.rawValue -> {
                 handleCTAPReset()
             }
+
             else -> {
                 handleCTAPUnsupportedCommand()
             }
@@ -112,9 +192,7 @@ class BLEFIDOService(
 
     private fun handleBLEError(value: ByteArray) {
         WAKLogger.d(TAG, "handleBLE: Error")
-        WAKLogger.d(TAG, "should be authenticator -> client")
-        // TODO closeByError(InvalidOperation)
-        close()
+        closeByBLEError(BLEErrorType.InvalidCmd)
     }
 
     private fun handleBLEPing(value: ByteArray) {
@@ -125,7 +203,7 @@ class BLEFIDOService(
         WAKLogger.d(TAG, "handleCTAP: MakeCredential")
         val params = CBORReader(value).readStringKeyMap()
         if (params == null) {
-            closeByError(CTAPStatusCode.InvalidCBOR)
+            closeByBLEError(BLEErrorType.InvalidPar)
             return
         }
     }
@@ -134,13 +212,58 @@ class BLEFIDOService(
         WAKLogger.d(TAG, "handleCTAP: GetAssertion")
         val params = CBORReader(value).readStringKeyMap()
         if (params == null) {
-            closeByError(CTAPStatusCode.InvalidCBOR)
+            closeByBLEError(BLEErrorType.InvalidPar)
             return
         }
     }
 
     private fun handleCTAPGetInfo() {
         WAKLogger.d(TAG, "handleCTAP: GetInfo")
+
+        val info: MutableMap<String, Any> = mutableMapOf()
+
+        info["versions"] = "FIDO_2_0"
+
+        info["aaguid"] = byteArrayOf(
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
+        )
+
+        val options: MutableMap<String, Any> = mutableMapOf()
+        options["plat"] = false
+        options["rk"]   = true
+        options["up"]   = true
+        options["uv"]   = true
+
+        info["options"] = options
+
+        // info["maxMsgSize"] = maxMsgSize
+        // info["extensions"]  // currently this library doesn't support any extensions
+
+        val cbor = CBORWriter().putStringKeyMap(info).compute()
+        handleResponse(BLECommandType.MSG, cbor)
+    }
+
+    private var peripheral: Peripheral? = null
+
+    private fun handleResponse(command: BLECommandType, value: ByteArray) {
+        val (first, rest) =
+            FrameSplitter(maxPacketDataSize = 20).split(command, value)
+
+        sendResultAsNotification(first.toByteArray())
+
+        rest.forEach {
+            // TODO delay(50ms)
+            sendResultAsNotification(it.toByteArray())
+        }
+    }
+
+    private fun sendResultAsNotification(value: ByteArray) {
+        peripheral?.notifyValue(
+                "0xFFFD",
+                "F1D0FFF1-DEAA-ECEE-B42F-C9BA7ED623BB",
+                 value
+        )
     }
 
     private fun handleCTAPClientPIN(value: ByteArray) {
@@ -161,22 +284,45 @@ class BLEFIDOService(
 
     private fun handleCTAPUnsupportedCommand() {
         WAKLogger.d(TAG, "handleCTAP: Unsupported Command")
-        // TODO closeByError()
+        closeByBLEError(BLEErrorType.InvalidCmd)
     }
 
-    private fun closeByError(error: CTAPStatusCode) {
-        // send error packet as 'status' notification
+    private fun closeByBLEError(error: BLEErrorType) {
+        val b1 = (error.rawValue and 0x0000_ff00).shr(8).toByte()
+        val b2= (error.rawValue and 0x0000_00ff).toByte()
+        val value = byteArrayOf(b1, b2)
+
+        val (first, rest) =
+            FrameSplitter(maxPacketDataSize = 20).split(BLECommandType.Error, value)
+
+        sendResultAsNotification(first.toByteArray())
+
+        rest.forEach {
+            // TODO delay(50ms)
+            sendResultAsNotification(it.toByteArray())
+        }
+
         // delay 10ms
-        // close()
+        close()
     }
+
+    var closed = false
 
     private fun close() {
 
+        WAKLogger.d(TAG, "close")
+
+        if (closed) {
+            WAKLogger.d(TAG, "already closed")
+            return
+        }
+
+        stopTimer()
+
+        listener?.onClosed()
     }
 
     private var frameBuffer = FrameBuffer()
-
-    private var peripheral: Peripheral? = null
 
     private fun createPeripheral(): Peripheral {
 
@@ -188,20 +334,25 @@ class BLEFIDOService(
             fun controlPoint(req: WriteRequest, res: WriteResponse) {
                 WAKLogger.d(TAG, "@Write: controlPoint")
 
+                if (!isLockedBy(req.device.address)) {
+                    WAKLogger.d(TAG, "@Write: unbound device")
+                    res.status = BluetoothGatt.GATT_FAILURE
+                    return
+                }
+
                 GlobalScope.launch {
 
-                    if (frameBuffer.putFragment(req.value)) {
+                    val error = frameBuffer.putFragment(req.value)
 
-                        if (frameBuffer.isDone()) {
-
-                            handleCommand(frameBuffer.getCommand(), frameBuffer.getData())
-                            frameBuffer.clear()
-                        }
-
-                    } else {
+                    error?.let {
                         frameBuffer.clear()
-                        // TODO more detailed error should be passed to 'close'
-                        close()
+                        closeByBLEError(it)
+                        return@launch
+                    }
+
+                    if (frameBuffer.isDone()) {
+                        handleCommand(frameBuffer.getCommand(), frameBuffer.getData())
+                        frameBuffer.clear()
                     }
 
                 }
@@ -213,13 +364,20 @@ class BLEFIDOService(
             @Secure(true)
             fun status(req: ReadRequest, res: ReadResponse) {
                 WAKLogger.d(TAG, "@Read: status")
-                WAKLogger.d(TAG, "do nothing")
+                WAKLogger.d(TAG, "This characteristic is just for notification")
+                res.status = BluetoothGatt.GATT_FAILURE
+                return
             }
 
             @OnRead("F1D0FFF3-DEAA-ECEE-B42F-C9BA7ED623BB")
             @Secure(true)
             fun controlPointLength(req: ReadRequest, res: ReadResponse) {
                 WAKLogger.d(TAG, "@Read: controlPointLength")
+                if (!isLockedBy(req.device.address)) {
+                    WAKLogger.d(TAG, "@Write: unbound device")
+                    res.status = BluetoothGatt.GATT_FAILURE
+                    return
+                }
                 // TODO obtain MTU
             }
 
@@ -228,6 +386,13 @@ class BLEFIDOService(
             @Secure(true)
             fun serviceRevisionBitFieldWrite(req: WriteRequest, res: WriteResponse) {
                 WAKLogger.d(TAG, "@Write: serviceRevisionBitField")
+
+                if (!isLockedBy(req.device.address)) {
+                    WAKLogger.d(TAG, "@Write: unbound device")
+                    res.status = BluetoothGatt.GATT_FAILURE
+                    return
+                }
+
                 if (req.value.size == 1 && req.value[0].toInt() == 0x20) {
                     res.status = BluetoothGatt.GATT_SUCCESS
                 } else {
@@ -240,6 +405,13 @@ class BLEFIDOService(
             @Secure(true)
             fun serviceRevisionBitFieldRead(req: ReadRequest, res: ReadResponse) {
                 WAKLogger.d(TAG, "@Read: serviceRevisionBitField")
+
+                if (!isLockedBy(req.device.address)) {
+                    WAKLogger.d(TAG, "@Write: unbound device")
+                    res.status = BluetoothGatt.GATT_FAILURE
+                    return
+                }
+
                 /*
                  Support Version Bitfield
 

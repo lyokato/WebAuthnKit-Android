@@ -57,7 +57,6 @@ class Characteristic(
             } catch (e: Exception) {
                 WAKLogger.w(TAG, "Exception happened during read request: $e")
             }
-
         }
     }
 

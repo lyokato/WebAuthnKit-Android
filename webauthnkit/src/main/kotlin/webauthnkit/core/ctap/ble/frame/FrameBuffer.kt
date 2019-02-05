@@ -1,6 +1,7 @@
 package webauthnkit.core.ctap.ble.frame
 
 import webauthnkit.core.ctap.ble.BLECommandType
+import webauthnkit.core.ctap.ble.BLEErrorType
 import webauthnkit.core.util.ByteArrayUtil
 import webauthnkit.core.util.WAKLogger
 
@@ -10,35 +11,36 @@ class FrameBuffer {
         val TAG = FrameBuffer::class.simpleName
     }
 
-    private var waitingContinuation = false
-    private var done = false
-    private var seq = -1
-    private var command: BLECommandType? = null
-    private var len: Int = 0
-    private var data: ByteArray = byteArrayOf()
+    private var waitingContinuation: Boolean = false
+    private var done:                Boolean = false
+    private var command:             BLECommandType? = null
+    private var data:                ByteArray = byteArrayOf()
+    private var seq:                 Int = -1
+    private var len:                 Int = 0
 
     fun clear() {
         waitingContinuation = false
-        done = false
-        seq = -1
-        command = null
-        len = 0
-        data = byteArrayOf()
+        done                = false
+        seq                 = -1
+        command             = null
+        len                 = 0
+        data                = byteArrayOf()
     }
 
-    fun putFragment(value: ByteArray): Boolean {
+    fun putFragment(value: ByteArray): BLEErrorType? {
 
         if (done) {
             WAKLogger.d(TAG, "always got enough data. process and discard buffer.")
-            return false
+            return BLEErrorType.InvalidLen
         }
 
         if (waitingContinuation) {
 
-            val contFrame = ContinuationFrame.fromByteArray(value)
+            val (contFrame, err) =
+                ContinuationFrame.fromByteArray(value)
             if (contFrame == null) {
                 WAKLogger.w(TAG, "failed to obtain continuation frame, discard this buffer")
-                return false
+                return err
             }
 
             if (seq < contFrame.seq) {
@@ -53,15 +55,15 @@ class FrameBuffer {
 
             } else {
                 WAKLogger.d(TAG, "invalid seq in continuation frame, discard this buffer")
-                return false
+                return BLEErrorType.InvalidLen
             }
 
         } else {
 
-            val initFrame = Frame.fromByteArray(value)
+            val (initFrame, err) = Frame.fromByteArray(value)
             if (initFrame == null) {
                 WAKLogger.d(TAG, "failed to obtain init frame, discard this buffer")
-                return false
+                return err
             }
 
             command = initFrame.command
@@ -75,7 +77,7 @@ class FrameBuffer {
             }
         }
 
-        return true
+        return null
     }
 
     fun isDone(): Boolean {

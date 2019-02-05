@@ -1,5 +1,18 @@
 package webauthnkit.core.ctap.ble
 
+enum class BLEErrorType(val rawValue: Int) {
+    InvalidCmd(0x01),
+    InvalidPar(0x02),
+    InvalidLen(0x03),
+    InvalidSeq(0x04),
+    ReqTimeout(0x05),
+    Other(0x7f);
+
+    fun toByte(): Byte {
+        return rawValue.toByte()
+    }
+}
+
 enum class BLECommandType(val rawValue: Int) {
 
     Ping(0x81),

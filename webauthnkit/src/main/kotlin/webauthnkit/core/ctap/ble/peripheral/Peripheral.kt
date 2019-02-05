@@ -15,7 +15,9 @@ import java.util.*
 interface PeripheralListener {
     fun onAdvertiseSuccess(settingsInEffect: AdvertiseSettings)
     fun onAdvertiseFailure(errorCode: Int)
-    fun onConnectionStateChange(device: BluetoothDevice, status: Int, newState: Int)
+    fun onConnected(address: String)
+    fun onDisconnected(address: String)
+    fun onMtuChanged(device: BluetoothDevice, mtu: Int)
 }
 
 class Peripheral(
@@ -129,6 +131,32 @@ class Peripheral(
         running = false
     }
 
+    fun notifyValue(serviceUUIDString: String, chUUIDString: String, value: ByteArray) {
+
+        if (rawServer == null) {
+            WAKLogger.d(TAG, "server not found")
+            return
+        }
+
+        val serviceUUID = UUID.fromString(serviceUUIDString)
+        val chUUID = UUID.fromString(chUUIDString)
+
+        val rawService = rawServer!!.getService(serviceUUID)
+        if (rawService == null) {
+            WAKLogger.d(TAG, "service not found")
+            return
+        }
+
+        val rawCh = rawService.getCharacteristic(chUUID)
+        if (rawCh == null) {
+            WAKLogger.d(TAG, "characteristic not found")
+            return
+        }
+
+        service.notifyValue(rawServer!!, rawCh, value)
+
+    }
+
     private fun createAdvertiseData(): AdvertiseData {
         val builder=  AdvertiseData.Builder()
         builder.setIncludeTxPowerLevel(includeTxPower)
@@ -213,11 +241,13 @@ class Peripheral(
             override fun onConnectionStateChange(device: BluetoothDevice, status: Int, newState: Int) {
                 WAKLogger.d(TAG, "onConnectionStateChange")
 
-                if (status == BluetoothProfile.STATE_DISCONNECTED) {
+                if (newState == BluetoothProfile.STATE_DISCONNECTED) {
                     service.forgetDeviceForNotification(device)
+                    listener?.onDisconnected(device.address)
+                } else if (newState == BluetoothProfile.STATE_CONNECTED) {
+                    // TODO needed? device.createBond()
+                    listener?.onConnected(device.address)
                 }
-
-                listener?.onConnectionStateChange(device, status, newState)
             }
 
             override fun onDescriptorReadRequest(
@@ -253,7 +283,6 @@ class Peripheral(
                     }
 
                 }
-
                 rawServer!!.sendResponse(device, requestId, BluetoothGatt.GATT_SUCCESS, offset, value)
             }
 
@@ -263,6 +292,7 @@ class Peripheral(
 
             override fun onMtuChanged(device: BluetoothDevice, mtu: Int) {
                 WAKLogger.d(TAG, "onMtuChanged")
+                listener?.onMtuChanged(device, mtu)
             }
 
             override fun onNotificationSent(device: BluetoothDevice, status: Int) {

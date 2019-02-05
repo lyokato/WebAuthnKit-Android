@@ -1,5 +1,6 @@
 package webauthnkit.core.ctap.ble.frame
 
+import webauthnkit.core.ctap.ble.BLEErrorType
 import webauthnkit.core.util.ByteArrayUtil
 import webauthnkit.core.util.WAKLogger
 import java.util.*
@@ -12,15 +13,15 @@ class ContinuationFrame(
     companion object {
         val TAG = ContinuationFrame::class.simpleName
 
-        fun fromByteArray(bytes: ByteArray): ContinuationFrame? {
+        fun fromByteArray(bytes: ByteArray): Pair<ContinuationFrame?, BLEErrorType?> {
             val size = bytes.size
             if (size < 2) {
                 WAKLogger.w(TAG, "invalid BLE frame: no enough size")
-                return null
+                return Pair(null, BLEErrorType.InvalidLen)
             }
             val seq = bytes[0].toInt()
             val data = Arrays.copyOfRange(bytes, 1, size)
-            return ContinuationFrame(seq, data)
+            return Pair(ContinuationFrame(seq, data), null)
         }
     }
 

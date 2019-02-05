@@ -1,6 +1,7 @@
 package webauthnkit.core.ctap.ble.frame
 
 import webauthnkit.core.ctap.ble.BLECommandType
+import webauthnkit.core.ctap.ble.BLEErrorType
 import webauthnkit.core.util.ByteArrayUtil
 import webauthnkit.core.util.WAKLogger
 import java.util.*
@@ -15,24 +16,24 @@ class Frame(
 
         val TAG = Frame::class.simpleName
 
-        fun fromByteArray(bytes: ByteArray): Frame? {
+        fun fromByteArray(bytes: ByteArray): Pair<Frame?, BLEErrorType?> {
 
             val size = bytes.size
             if (size < 3) {
                 WAKLogger.w(TAG, "invalid BLE frame: no enough size for header")
-                return null
+                return Pair(null, BLEErrorType.InvalidLen)
             }
 
             val command = BLECommandType.fromByte(bytes[0])
             if (command == null) {
                 WAKLogger.w(TAG, "invalid BLE frame: unknown command type")
-                return null
+                return Pair(null, BLEErrorType.InvalidCmd)
             }
 
             val len = (bytes[1].toInt() and 0x0000_ff00) or (bytes[2].toInt() and 0x0000_00ff)
             val data = Arrays.copyOfRange(bytes, 3, size)
 
-            return Frame(command, len, data)
+            return Pair(Frame(command, len, data), null)
         }
     }
 

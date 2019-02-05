@@ -2,6 +2,7 @@ package webauthnkit.core.ctap.ble.peripheral
 
 import android.bluetooth.BluetoothDevice
 import android.bluetooth.BluetoothGattCharacteristic
+import android.bluetooth.BluetoothGattServer
 import android.bluetooth.BluetoothGattService
 import webauthnkit.core.InvalidStateException
 import webauthnkit.core.ctap.ble.BLEEvent
@@ -30,6 +31,16 @@ open class PeripheralService(val uuidString: String) {
             characteristics.getValue(uuid).canHandle(event)
         } else {
             false
+        }
+    }
+
+    internal fun notifyValue(server: BluetoothGattServer,
+                             rawCh: BluetoothGattCharacteristic,
+                             value: ByteArray) {
+        val ch = characteristics[rawCh.uuid.toString()] ?: return
+        rawCh.value = value
+        ch.getDevicesToNotify().forEach {
+            server.notifyCharacteristicChanged(it, rawCh, false)
         }
     }
 

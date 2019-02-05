@@ -1,6 +1,5 @@
 package webauthnkit.core.authenticator.internal
 
-import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentActivity
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 
