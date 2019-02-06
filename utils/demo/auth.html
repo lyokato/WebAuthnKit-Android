@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>WebAuthn Demo</title>
+  <meta charset='UTF-8'/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+  .demo-card-wide.mdl-card {
+    width: 512px;
+    padding: 20px
+  }
+  .demo-card-wide > .mdl-card__title {
+    color: #000;
+    height: 50px;
+  }
+  .demo-card-wide > .mdl-card__menu {
+    color: #000;
+  }
+</style>
+</head>
+<body>
+
+  <div class="mdl-layout mdl-js-layout">
+    <header class="mdl-layout__header mdl-layout__header--scroll">
+      <div class="mdl-layout__header-row">
+        <!-- Title -->
+        <span class="mdl-layout-title">WebAuthn Demo</span>
+        <!-- Add spacer, to align navigation to the right -->
+        <div class="mdl-layout-spacer"></div>
+        <!-- Navigation -->
+        <nav class="mdl-navigation">
+          <a class="mdl-navigation__link" href="reg.html">Registration</a>
+          <a class="mdl-navigation__link" href="#">Authentication</a>
+        </nav>
+      </div>
+    </header>
+
+  <main class="mdl-layout__content">
+
+    <div class="mdl-grid">
+      <div class="mdl-cell mdl-cell--6-col">
+        <h3>Authentication</h3>
+      </div>
+    </div>
+
+    <div class="mdl-grid">
+      <div class="mdl-cell mdl-cell--6-col">
+
+          <div class="demo-card-wide mdl-card mdl-shadow--2dp">
+          <form id="regform" action="#">
+
+            <div class="mdl-card__title">
+              <h2 class="mdl-card__title-text">Request</h2>
+            </div>
+
+            <div class="mdl-card__supporting-text">Relying Party Setting</div>
+
+            <label for='rpId'>ID</label>
+            <input class="mdl-textfield__input" type='text' name='rpId' value="localhost"><br />
+
+            <div class="mdl-card__supporting-text">Credential Setting</div>
+            <label for='credId'>ID</label>
+            <input class="mdl-textfield__input" type='text' name='credId' value=""><br />
+
+          </form>
+
+            <div class="mdl-card__actions mdl-card--border">
+              <a class="mdl-button mdl-button--colored mdl-js-button mdl-js-ripple-effect" id="register_button">
+                AUTHENTICATE
+              </a>
+            </div>
+          </div> <!-- card -->
+      </div>
+
+      <div class="mdl-cell mdl-cell--6-col">
+
+          <div class="demo-card-wide mdl-card mdl-shadow--2dp">
+            <div class="mdl-card__title">
+              <h2 class="mdl-card__title-text">Response</h2>
+            </div>
+
+            <div class="mdl-card__supporting-text">CredentialId</div>
+            <div class="mdl-card__supporting-text" id="resCredId">___</div>
+
+            <div class="mdl-card__supporting-text">ClientDataJSON</div>
+            <div class="mdl-card__supporting-text" id="resClientDataJSON">___</div>
+
+            <div class="mdl-card__supporting-text">Signature</div>
+            <div class="mdl-card__supporting-text" id="resSignature">___</div>
+
+            <div class="mdl-card__supporting-text">UserHandle</div>
+            <div class="mdl-card__supporting-text" id="resUserHandle">___</div>
+
+            <div class="mdl-card__supporting-text">AuthenticatorData</div>
+            <div class="mdl-card__supporting-text" id="resAuthenticatorData">___</div>
+
+          </div>
+      </div>
+    </div>
+  </main>
+  </div>
+
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+  <script src="base64url-arraybuffer.js"></script>
+  <script src="helpers.js"></script>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
+  <link rel="stylesheet" href="https://code.getmdl.io/1.3.0/material.indigo-pink.min.css">
+  <script defer src="https://code.getmdl.io/1.3.0/material.min.js"></script>
+  <script>
+    $(document).ready(() => {
+
+      $('#register_button').click(() => {
+
+        console.log("clicked")
+
+        const rpId = $("#regform [name=rpId]").val()
+        const credId = $("#regform [name=credId]").val()
+
+        const publicKey = {
+          rpId: rpId,
+          challenge: new Uint8Array(generateRandomBuffer()),
+          allowCredentials: [{
+            type: 'public-key',
+            id: new Uint8Array(base64url.decode(credId))
+          }]
+        }
+
+        console.log(JSON.stringify(publicKey))
+
+        navigator.credentials.get({ publicKey })
+          .then((assertion) => {
+
+            console.log(assertion.toString())
+
+            const {id, rawId, response} = assertion
+            const {type, authenticatorData, signature, userHandle, clientDataJSON} = response
+
+            $('#resCredId').text(base64url.encode(rawId))
+            $('#resClientDataJSON').text(base64url.encode(clientDataJSON))
+            $('#resSignature').text(base64url.encode(signature))
+            $('#resUserHandle').text(base64url.encode(userHandle))
+            $('#resAuthenticatorData').text(base64url.encode(authenticatorData))
+
+          }).catch((error) => {
+            console.log(error.toString())
+
+          })
+      })
+
+    })
+  </script>
+</body>
+</html>
