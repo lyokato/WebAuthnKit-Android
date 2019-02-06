@@ -1,14 +1,14 @@
 apply plugin: 'com.android.application'
 
 apply plugin: 'kotlin-android'
-
 apply plugin: 'kotlin-android-extensions'
+apply plugin: 'kotlin-kapt'
 
 android {
     compileSdkVersion 28
     defaultConfig {
         applicationId "webauthnkit.example"
-        minSdkVersion 21
+        minSdkVersion 23
         targetSdkVersion 28
         multiDexEnabled true
         versionCode 1
@@ -51,4 +51,7 @@ dependencies {
     implementation 'com.jaredrummler:material-spinner:1.2.5'
 
     implementation "org.jetbrains.anko:anko:$anko_version"
+
+    implementation "org.permissionsdispatcher:permissionsdispatcher:4.3.0"
+    kapt "org.permissionsdispatcher:permissionsdispatcher-processor:4.3.0"
 }

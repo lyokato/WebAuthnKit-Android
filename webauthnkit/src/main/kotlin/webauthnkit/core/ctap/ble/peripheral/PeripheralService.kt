@@ -4,6 +4,7 @@ import android.bluetooth.BluetoothDevice
 import android.bluetooth.BluetoothGattCharacteristic
 import android.bluetooth.BluetoothGattServer
 import android.bluetooth.BluetoothGattService
+import android.os.ParcelUuid
 import webauthnkit.core.error.InvalidStateException
 import webauthnkit.core.ctap.ble.BleEvent
 import webauthnkit.core.ctap.ble.peripheral.annotation.*
@@ -157,17 +158,19 @@ open class PeripheralService(val uuidString: String) {
     private fun validReadHandler(method: Method): Boolean {
         val argTypes = method.parameterTypes
         if (argTypes.size != 2) {
+            WAKLogger.d(TAG, "arg size is not 2")
             return false
         }
-        return (argTypes[0] == ReadRequest::class && argTypes[1] == ReadResponse::class)
+        return (argTypes[0] == ReadRequest::class.java && argTypes[1] == ReadResponse::class.java)
     }
 
     private fun validWriteHandler(method: Method): Boolean {
         val argTypes = method.parameterTypes
         if (argTypes.size != 2) {
+            WAKLogger.d(TAG, "arg size is not 2")
             return false
         }
-        return (argTypes[0] == WriteRequest::class && argTypes[1] == WriteResponse::class)
+        return (argTypes[0] == WriteRequest::class.java && argTypes[1] == WriteResponse::class.java)
     }
 
 }

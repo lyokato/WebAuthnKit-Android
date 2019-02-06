@@ -52,7 +52,7 @@ class RegistrationActivity : AppCompatActivity() {
             padding = dip(10)
 
             textView {
-                text = "User Id"
+                text = "User Id(Base64)"
             }
 
             userIdField = editText {
@@ -307,7 +307,7 @@ class RegistrationActivity : AppCompatActivity() {
         val options = PublicKeyCredentialCreationOptions()
 
         options.challenge        = ByteArrayUtil.fromHex(challenge)
-        options.user.id          = userId
+        options.user.id          = ByteArrayUtil.decodeBase64URL(userId)
         options.user.name        = username
         options.user.displayName = userDisplayName
         options.user.icon        = userIconURL

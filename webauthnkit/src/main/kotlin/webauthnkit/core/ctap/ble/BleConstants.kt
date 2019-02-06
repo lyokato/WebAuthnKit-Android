@@ -63,17 +63,3 @@ enum class BLEKeepAliveStatus(val rawValue: Int) {
 
 }
 
-enum class BLEError(val rawValue: Int) {
-
-    InvalidCMD(0x01),
-    InvalidPar(0x02),
-    InvalidLen(0x03),
-    InvalidSeq(0x04),
-    ReqTimeout(0x05),
-    Other(0x7f);
-
-    fun toByte(): Byte {
-        return rawValue.toByte()
-    }
-
-}

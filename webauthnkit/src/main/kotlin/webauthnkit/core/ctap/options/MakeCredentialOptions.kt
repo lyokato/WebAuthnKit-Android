@@ -92,11 +92,11 @@ class MakeCredentialOptions(
                 WAKLogger.d(TAG, "missing 'user:id'")
                 return Pair(null, BLEErrorType.InvalidPar)
             }
-            if (userMap["id"] !is String) {
-                WAKLogger.d(TAG, "'user:id' is not a String")
+            if (userMap["id"] !is ByteArray) {
+                WAKLogger.d(TAG, "'user:id' is not a ByteArray")
                 return Pair(null, BLEErrorType.InvalidPar)
             }
-            val userId = userMap["id"] as String
+            val userId = userMap["id"] as ByteArray
 
             if (!userMap.containsKey("name")) {
                 WAKLogger.d(TAG, "missing 'user:name'")

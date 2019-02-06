@@ -107,7 +107,7 @@ class InternalMakeCredentialSession(
             val credentialId = createNewCredentialId()
 
             val rpId       = rpEntity.id!!
-            val userHandle = userEntity.id!!.toByteArray()
+            val userHandle = userEntity.id
 
             WAKLogger.d(TAG, "makeCredential - create new credential source")
 

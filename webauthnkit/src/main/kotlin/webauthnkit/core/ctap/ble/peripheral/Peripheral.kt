@@ -42,11 +42,11 @@ class Peripheral(
     private var advertiser: BluetoothLeAdvertiser? = null
     private var advertiseCallback: AdvertiseCallback? = null
 
-    var advertiseMode = AdvertiseSettings.ADVERTISE_MODE_BALANCED
-    var advertiseTxPower = AdvertiseSettings.ADVERTISE_TX_POWER_MEDIUM
+    var advertiseMode = AdvertiseSettings.ADVERTISE_MODE_LOW_LATENCY
+    var advertiseTxPower = AdvertiseSettings.ADVERTISE_TX_POWER_HIGH
 
-    var includeTxPower = false
-    var includeDeviceName = false
+    var includeTxPower = true
+    var includeDeviceName = true
 
     fun systemSupported(): Boolean {
 
@@ -83,6 +83,7 @@ class Peripheral(
             return false
         }
 
+        // TODO better 'Unsupport' handling
         if (!(systemSupported() && isEnabled())) {
             WAKLogger.w(TAG, "can't run")
             return false
@@ -162,10 +163,11 @@ class Peripheral(
     }
 
     private fun createAdvertiseData(): AdvertiseData {
+        val serviceUUID = ParcelUuid(service.uuid)
         val builder=  AdvertiseData.Builder()
         builder.setIncludeTxPowerLevel(includeTxPower)
         builder.setIncludeDeviceName(includeDeviceName)
-        builder.addServiceUuid(ParcelUuid(service.uuid))
+        builder.addServiceUuid(serviceUUID)
         return builder.build()
     }
 
@@ -181,6 +183,20 @@ class Peripheral(
         return object: AdvertiseCallback() {
 
             override fun onStartFailure(errorCode: Int) {
+                var description = ""
+                if (errorCode == AdvertiseCallback.ADVERTISE_FAILED_FEATURE_UNSUPPORTED)
+                    description = "ADVERTISE_FAILED_FEATURE_UNSUPPORTED"
+                else if (errorCode == AdvertiseCallback.ADVERTISE_FAILED_TOO_MANY_ADVERTISERS)
+                    description = "ADVERTISE_FAILED_TOO_MANY_ADVERTISERS"
+                else if (errorCode == AdvertiseCallback.ADVERTISE_FAILED_ALREADY_STARTED)
+                    description = "ADVERTISE_FAILED_ALREADY_STARTED"
+                else if (errorCode == AdvertiseCallback.ADVERTISE_FAILED_DATA_TOO_LARGE)
+                    description = "ADVERTISE_FAILED_DATA_TOO_LARGE"
+                else if (errorCode == AdvertiseCallback.ADVERTISE_FAILED_INTERNAL_ERROR)
+                    description = "ADVERTISE_FAILED_INTERNAL_ERROR"
+                else
+                    description = "unknown"
+                WAKLogger.w(TAG, description)
                 listener?.onAdvertiseFailure(errorCode)
             }
 
@@ -202,7 +218,7 @@ class Peripheral(
                 offset:         Int,
                 characteristic: BluetoothGattCharacteristic
             ) {
-                WAKLogger.d(TAG, "onCharacteristicReadRequest")
+                WAKLogger.d(TAG, "onCharacteristicReadRequest: Characteristic<${characteristic.uuid}> Service<${characteristic.service.uuid}>")
 
                 val req = ReadRequest(device, characteristic, requestId, offset)
                 val res = ReadResponse(req)
@@ -226,7 +242,7 @@ class Peripheral(
                 offset:         Int,
                 value:          ByteArray
             ) {
-                WAKLogger.d(TAG, "onCharacteristicWriteRequest")
+                WAKLogger.d(TAG, "onCharacteristicWriteRequest: Characteristic<${characteristic.uuid}> Service<${characteristic.service.uuid}>")
 
                 val req = WriteRequest(device, characteristic, requestId,
                     offset, preparedWrite, responseNeeded, value)
@@ -260,7 +276,7 @@ class Peripheral(
                 offset:     Int,
                 descriptor: BluetoothGattDescriptor
             ) {
-                WAKLogger.d(TAG, "onDescriptionReadRequest")
+                WAKLogger.d(TAG, "onDescriptionReadRequest: Descriptor<${descriptor.uuid}>  Characteristic<${descriptor.characteristic.uuid}> Service<${descriptor.characteristic.service.uuid}>")
             }
 
             override fun onDescriptorWriteRequest(
@@ -272,7 +288,7 @@ class Peripheral(
                 offset:         Int,
                 value:          ByteArray
             ) {
-                WAKLogger.d(TAG, "onDescriptionWriteRequest")
+                WAKLogger.d(TAG, "onDescriptionWriteRequest: Descriptor<${descriptor.uuid}>  Characteristic<${descriptor.characteristic.uuid}> Service<${descriptor.characteristic.service.uuid}>")
 
                 if (descriptor.uuid.toString() == "00002902-0000-1000-8000-00805F9B34FB"
                     && Arrays.equals(value, BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE)) {

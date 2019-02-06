@@ -1,9 +1,9 @@
 package webauthnkit.core.ctap.ble
 
+import android.app.Activity
 import android.bluetooth.BluetoothDevice
 import android.bluetooth.BluetoothGatt
 import android.bluetooth.le.AdvertiseSettings
-import android.content.Context
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.delay
@@ -18,9 +18,8 @@ import webauthnkit.core.ctap.options.GetAssertionOptions
 import webauthnkit.core.ctap.options.MakeCredentialOptions
 import webauthnkit.core.util.CBORWriter
 import webauthnkit.core.util.WAKLogger
-import java.util.*
 
-interface BLEFIDOServiceListener {
+interface BleFidoServiceListener {
     fun onConnected(address: String)
     fun onDisconnected(address: String)
     fun onClosed()
@@ -28,21 +27,22 @@ interface BLEFIDOServiceListener {
 
 @ExperimentalCoroutinesApi
 @ExperimentalUnsignedTypes
-class BLEFIDOService(
-    private val context:       Context,
+class BleFidoService(
+    private val activity:      Activity,
                 authenticator: Authenticator,
-    private val listener:      BLEFIDOServiceListener?
+    private var listener:      BleFidoServiceListener?
 ) {
 
     private val operationManager = BleFidoOperationManager(authenticator)
 
-    var intervalDelayTimeMillis: Long = 50
+    var fragmentedResponseIntervalMilliSeconds: Long = 20
     var maxPacketDataSize: Int = 20
-    var timeoutSeconds: Long = 60
     private var lockedByDevice: String? = null
 
     companion object {
-        val TAG = BLEFIDOService::class.simpleName
+        val TAG = BleFidoService::class.simpleName
+        // 16 bit service UUID (FFFD)
+        val FIDO_UUID = "0000FFFD-0000-1000-8000-00805F9B34FB".toLowerCase()
     }
 
     private val peripheralListener = object: PeripheralListener {
@@ -61,7 +61,9 @@ class BLEFIDOService(
 
             if (lockedByDevice == null) {
                 lockedByDevice = address
-                listener?.onConnected(address)
+                activity.runOnUiThread {
+                    listener?.onConnected(address)
+                }
             } else {
                 WAKLogger.d(TAG, "onConnected: this device is already locked by $lockedByDevice")
             }
@@ -71,7 +73,9 @@ class BLEFIDOService(
             WAKLogger.d(TAG, "onDisconnected: $address")
 
             if (isLockedBy(address)) {
-                listener?.onDisconnected(address)
+                activity.runOnUiThread {
+                    listener?.onDisconnected(address)
+                }
                 close()
             }
         }
@@ -88,39 +92,19 @@ class BLEFIDOService(
         return (lockedByDevice != null && lockedByDevice == deviceAddress)
     }
 
-    private var timer: Timer? = null
-
-    fun start() {
+    fun start(): Boolean {
         this.peripheral = createPeripheral()
-        peripheral!!.start()
+        return if (peripheral!!.start()) {
+            true
+        } else {
+            peripheral?.stop()
+            peripheral = null
+            false
+        }
     }
 
     fun stop() {
         close()
-    }
-
-    private fun startTimer() {
-        WAKLogger.d(TAG, "startTimer")
-        stopTimer()
-        timer = Timer()
-        timer!!.schedule(object: TimerTask(){
-            override fun run() {
-                timer = null
-                onTimeout()
-            }
-        }, timeoutSeconds)
-    }
-
-    private fun stopTimer() {
-        WAKLogger.d(TAG, "stopTimer")
-        timer?.cancel()
-        timer = null
-    }
-
-    private fun onTimeout() {
-        WAKLogger.d(TAG, "onTimeout")
-        stopTimer()
-        closeByBLEError(BLEErrorType.ReqTimeout)
     }
 
     private fun handleCommand(command: BLECommandType, data: ByteArray) {
@@ -336,7 +320,7 @@ class BLEFIDOService(
             sendResultAsNotification(first.toByteArray())
 
             rest.forEach {
-                delay(intervalDelayTimeMillis)
+                delay(fragmentedResponseIntervalMilliSeconds)
                 sendResultAsNotification(it.toByteArray())
             }
 
@@ -349,7 +333,7 @@ class BLEFIDOService(
         WAKLogger.d(TAG, "sendResultAsNotification")
 
         peripheral?.notifyValue(
-                "0xFFFD",
+                FIDO_UUID,
                 "F1D0FFF1-DEAA-ECEE-B42F-C9BA7ED623BB",
                  value
         )
@@ -392,11 +376,11 @@ class BLEFIDOService(
             sendResultAsNotification(first.toByteArray())
 
             rest.forEach {
-                delay(intervalDelayTimeMillis)
+                delay(fragmentedResponseIntervalMilliSeconds)
                 sendResultAsNotification(it.toByteArray())
             }
 
-            delay(intervalDelayTimeMillis)
+            delay(fragmentedResponseIntervalMilliSeconds)
             close()
 
         }
@@ -416,20 +400,24 @@ class BLEFIDOService(
 
         closed = true
 
-        stopTimer()
+        peripheral?.stop()
+        peripheral = null
 
-        listener?.onClosed()
+        activity.runOnUiThread {
+            listener?.onClosed()
+            listener = null
+        }
     }
 
     private var frameBuffer = FrameBuffer()
 
     private fun createPeripheral(): Peripheral {
 
-        val service = object: PeripheralService("0xFFFD") {
+        val service = object: PeripheralService(FIDO_UUID) {
 
             @OnWrite("F1D0FFF1-DEAA-ECEE-B42F-C9BA7ED623BB")
             @ResponseNeeded(true)
-            @Secure(true)
+            @Secure(false)
             fun controlPoint(req: WriteRequest, res: WriteResponse) {
                 WAKLogger.d(TAG, "@Write: controlPoint")
 
@@ -458,9 +446,9 @@ class BLEFIDOService(
 
             }
 
-            @OnRead("F1D0FFF1-DEAA-ECEE-B42F-C9BA7ED623BB")
+            @OnRead("F1D0FFF2-DEAA-ECEE-B42F-C9BA7ED623BB")
             @Notifiable(true)
-            @Secure(true)
+            @Secure(false)
             fun status(req: ReadRequest, res: ReadResponse) {
                 WAKLogger.d(TAG, "@Read: status")
                 WAKLogger.d(TAG, "This characteristic is just for notification")
@@ -469,7 +457,7 @@ class BLEFIDOService(
             }
 
             @OnRead("F1D0FFF3-DEAA-ECEE-B42F-C9BA7ED623BB")
-            @Secure(true)
+            @Secure(false)
             fun controlPointLength(req: ReadRequest, res: ReadResponse) {
                 WAKLogger.d(TAG, "@Read: controlPointLength")
                 if (!isLockedBy(req.device.address)) {
@@ -484,7 +472,7 @@ class BLEFIDOService(
 
             @OnWrite("F1D0FFF4-DEAA-ECEE-B42F-C9BA7ED623BB")
             @ResponseNeeded(true)
-            @Secure(true)
+            @Secure(false)
             fun serviceRevisionBitFieldWrite(req: WriteRequest, res: WriteResponse) {
                 WAKLogger.d(TAG, "@Write: serviceRevisionBitField")
 
@@ -503,7 +491,7 @@ class BLEFIDOService(
             }
 
             @OnRead("F1D0FFF4-DEAA-ECEE-B42F-C9BA7ED623BB")
-            @Secure(true)
+            @Secure(false)
             fun serviceRevisionBitFieldRead(req: ReadRequest, res: ReadResponse) {
                 WAKLogger.d(TAG, "@Read: serviceRevisionBitField")
 
@@ -532,7 +520,7 @@ class BLEFIDOService(
 
         }
 
-        return Peripheral(context, service, peripheralListener)
+        return Peripheral(activity.applicationContext, service, peripheralListener)
     }
 
 }
