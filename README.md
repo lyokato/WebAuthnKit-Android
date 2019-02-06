@@ -107,7 +107,7 @@ Then, create WebAuthnClient
 ```kotlin
 import webauthnkit.core.client.WebAuthnClient
 
-val client = WebAuthnClient.internal(
+val client = WebAuthnClient.create(
   activity = this,
   origin   = "https://example.org"
   ui       = consentUI!!
