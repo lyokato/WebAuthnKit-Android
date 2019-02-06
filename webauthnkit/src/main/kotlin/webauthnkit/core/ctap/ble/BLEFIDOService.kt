@@ -215,7 +215,12 @@ class BLEFIDOService(
 
         WAKLogger.d(TAG, "handleCTAP: MakeCredential")
 
-        // TODO Busy check
+        if (operationManager.hasActiveOperation()) {
+            WAKLogger.d(TAG, "handleCTAP: MakeCredential - busy")
+            // TODO better error message
+            closeByBLEError(BLEErrorType.Other)
+            return
+        }
 
         val (options, error) =
             MakeCredentialOptions.fromByteArray(value)
@@ -252,7 +257,12 @@ class BLEFIDOService(
 
         WAKLogger.d(TAG, "handleCTAP: GetAssertion")
 
-        // TODO Busy check
+        if (operationManager.hasActiveOperation()) {
+            WAKLogger.d(TAG, "handleCTAP: MakeCredential - busy")
+            // TODO better error message
+            closeByBLEError(BLEErrorType.Other)
+            return
+        }
 
         val (options, error) =
             GetAssertionOptions.fromByteArray(value)

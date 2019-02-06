@@ -25,6 +25,10 @@ class BLEFIDOOperationManager(
     private val getOperations: MutableMap<String, GetOperation> = HashMap()
     private val createOperations: MutableMap<String, CreateOperation> = HashMap()
 
+    fun hasActiveOperation(): Boolean {
+        return (getOperations.isNotEmpty() || createOperations.isNotEmpty())
+    }
+
     suspend fun get(
         options: GetAssertionOptions,
         timeout: Long

@@ -11,7 +11,6 @@ import webauthnkit.core.util.WAKLogger
 import java.lang.reflect.Method
 import java.util.*
 
-
 open class PeripheralService(val uuidString: String) {
 
     val uuid = UUID.fromString(uuidString)
@@ -19,6 +18,8 @@ open class PeripheralService(val uuidString: String) {
     companion object {
         val TAG = PeripheralService::class.simpleName
     }
+
+    private var analyzed: Boolean = false
 
     private val characteristics: MutableMap<String, Characteristic> = mutableMapOf()
 
@@ -76,6 +77,12 @@ open class PeripheralService(val uuidString: String) {
 
 
     internal fun analyzeCharacteristicsDefinition() {
+
+        if (analyzed) {
+            return
+        }
+
+        analyzed = true
 
         this::class.java.methods.forEach {
 

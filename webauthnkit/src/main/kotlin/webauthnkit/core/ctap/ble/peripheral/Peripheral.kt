@@ -30,6 +30,10 @@ class Peripheral(
         val TAG = Peripheral::class.simpleName
     }
 
+    init {
+        service.analyzeCharacteristicsDefinition()
+    }
+
     private var running: Boolean = false
     private var manager: BluetoothManager? = context.getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager?
     private var adapter: BluetoothAdapter? = manager?.adapter
