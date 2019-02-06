@@ -10,9 +10,9 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 
-import webauthnkit.core.*
-import webauthnkit.core.CollectedClientData
-import webauthnkit.core.PublicKeyCredentialCreationOptions
+import webauthnkit.core.error.ErrorReason
+import webauthnkit.core.data.*
+import webauthnkit.core.error.*
 import webauthnkit.core.authenticator.AttestationObject
 import webauthnkit.core.authenticator.MakeCredentialSession
 import webauthnkit.core.authenticator.MakeCredentialSessionListener

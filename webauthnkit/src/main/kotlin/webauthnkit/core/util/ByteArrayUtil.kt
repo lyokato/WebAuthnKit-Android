@@ -20,6 +20,10 @@ object ByteArrayUtil {
         return Base64.encodeToString(bytes, Base64.URL_SAFE or Base64.NO_PADDING or Base64.NO_WRAP)
     }
 
+    fun decodeBase64URL(str: String): ByteArray {
+        return Base64.decode(str, Base64.URL_SAFE or Base64.NO_PADDING or Base64.NO_WRAP)
+    }
+
     fun zeroUUIDBytes(): ByteArray {
         return byteArrayOf(
             0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,

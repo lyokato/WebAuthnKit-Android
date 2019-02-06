@@ -1,0 +1,3 @@
+package webauthnkit.core.data
+
+typealias MakeCredentialResponse = PublicKeyCredential<AuthenticatorAttestationResponse>

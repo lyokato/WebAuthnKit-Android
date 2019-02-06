@@ -1,11 +1,9 @@
 package webauthnkit.core.authenticator.internal
 
-import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentActivity
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 
-import webauthnkit.core.AuthenticatorAttachment
-import webauthnkit.core.AuthenticatorTransport
+import webauthnkit.core.data.*
 import webauthnkit.core.util.WAKLogger
 import webauthnkit.core.authenticator.Authenticator
 import webauthnkit.core.authenticator.GetAssertionSession

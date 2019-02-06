@@ -1,6 +1,7 @@
 package webauthnkit.core.authenticator
 
-import webauthnkit.core.*
+import webauthnkit.core.data.*
+import webauthnkit.core.error.ErrorReason
 
 class AuthenticatorAssertionResult(
     var credentialId:      ByteArray?,

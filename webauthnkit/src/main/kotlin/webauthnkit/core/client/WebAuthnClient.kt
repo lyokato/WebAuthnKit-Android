@@ -4,12 +4,10 @@ import androidx.fragment.app.FragmentActivity
 import com.fasterxml.jackson.annotation.JsonInclude
 import com.fasterxml.jackson.databind.ObjectMapper
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import webauthnkit.core.*
+import webauthnkit.core.data.*
 
 import webauthnkit.core.authenticator.Authenticator
-import webauthnkit.core.authenticator.internal.CredentialStore
 import webauthnkit.core.authenticator.internal.InternalAuthenticator
-import webauthnkit.core.authenticator.internal.key.KeySupportChooser
 import webauthnkit.core.authenticator.internal.ui.UserConsentUI
 import webauthnkit.core.client.operation.CreateOperation
 import webauthnkit.core.client.operation.GetOperation
@@ -28,7 +26,7 @@ class WebAuthnClient(
     companion object {
         val TAG = WebAuthnClient::class.simpleName
 
-        fun internal(
+        fun create(
             activity: FragmentActivity,
             origin:   String,
             ui:       UserConsentUI

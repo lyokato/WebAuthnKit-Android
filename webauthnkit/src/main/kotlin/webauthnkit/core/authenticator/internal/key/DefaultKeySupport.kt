@@ -8,12 +8,11 @@ import webauthnkit.core.util.WAKLogger
 import webauthnkit.core.authenticator.*
 import webauthnkit.core.util.ByteArrayUtil
 import java.security.*
-import java.security.cert.X509Certificate
 import java.security.interfaces.ECPublicKey
 import java.security.spec.ECGenParameterSpec
 import java.util.*
 import android.security.keystore.KeyInfo
-import webauthnkit.core.InvalidStateException
+import webauthnkit.core.error.InvalidStateException
 
 @TargetApi(Build.VERSION_CODES.M)
 @ExperimentalUnsignedTypes

@@ -413,7 +413,7 @@ class CBORWriter() {
 
     fun putArray(values: List<*>): CBORWriter {
         var bytes = this.composePositive(values.count().toLong())
-        bytes[0] = bytes[0] or CBORBits.arrayHeader.toByte()
+        bytes[0] = bytes[0] or CBORBits.arrayHeader
         this.result.write(bytes)
         values.forEach {
             when (it) {
@@ -445,7 +445,7 @@ class CBORWriter() {
 
     fun putStringKeyMap(values: Map<String, Any>): CBORWriter {
         var bytes = this.composePositive(values.count().toLong())
-        bytes[0] = bytes[0] or CBORBits.mapHeader.toByte()
+        bytes[0] = bytes[0] or CBORBits.mapHeader
         this.result.write(bytes)
         values.forEach {
             this.putString(it.key)
@@ -487,7 +487,7 @@ class CBORWriter() {
     // for COSE Key
     fun putIntKeyMap(values: Map<Int, Any>): CBORWriter {
         var bytes = this.composePositive(values.count().toLong())
-        bytes[0] = bytes[0] or CBORBits.mapHeader.toByte()
+        bytes[0] = bytes[0] or CBORBits.mapHeader
         this.result.write(bytes)
         values.forEach {
             this.putNumber(it.key.toLong())
@@ -542,7 +542,7 @@ class CBORWriter() {
     fun putString(value: String): CBORWriter {
         val data = value.toByteArray(charset = Charsets.UTF_8)
         val header = composeNumber(data.size.toLong())
-        header[0] = header[0] or CBORBits.stringHeader.toByte()
+        header[0] = header[0] or CBORBits.stringHeader
         this.result.write(header)
         this.result.write(data)
         return this
@@ -550,7 +550,7 @@ class CBORWriter() {
 
     fun putByteString(value: ByteArray): CBORWriter {
         val header = composeNumber(value.size.toLong())
-        header[0] = header[0] or CBORBits.bytesHeader.toByte()
+        header[0] = header[0] or CBORBits.bytesHeader
         this.result.write(header)
         this.result.write(value)
         return this
@@ -558,7 +558,7 @@ class CBORWriter() {
 
     fun putFloat(value: Float): CBORWriter {
         val data = ByteBuffer.allocate(5)
-            .put(CBORBits.floatBits.toByte())
+            .put(CBORBits.floatBits)
             .putFloat(value)
             .array()
         this.result.write(data)
@@ -567,7 +567,7 @@ class CBORWriter() {
 
     fun putDouble(value: Double): CBORWriter {
         val data = ByteBuffer.allocate(9)
-            .put(CBORBits.doubleBits.toByte())
+            .put(CBORBits.doubleBits)
             .putDouble(value)
             .array()
         this.result.write(data)

@@ -4,7 +4,6 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 
-import webauthnkit.core.*
 import webauthnkit.core.authenticator.AttestedCredentialData
 import webauthnkit.core.authenticator.AuthenticatorData
 import webauthnkit.core.authenticator.MakeCredentialSession
@@ -14,6 +13,8 @@ import webauthnkit.core.authenticator.internal.InternalAuthenticatorSetting
 import webauthnkit.core.authenticator.internal.key.KeySupportChooser
 import webauthnkit.core.authenticator.internal.PublicKeyCredentialSource
 import webauthnkit.core.authenticator.internal.ui.UserConsentUI
+import webauthnkit.core.error.*
+import webauthnkit.core.data.*
 import webauthnkit.core.util.WAKLogger
 import webauthnkit.core.util.ByteArrayUtil
 import java.util.*
@@ -106,7 +107,7 @@ class InternalMakeCredentialSession(
             val credentialId = createNewCredentialId()
 
             val rpId       = rpEntity.id!!
-            val userHandle = userEntity.id!!.toByteArray()
+            val userHandle = userEntity.id
 
             WAKLogger.d(TAG, "makeCredential - create new credential source")
 

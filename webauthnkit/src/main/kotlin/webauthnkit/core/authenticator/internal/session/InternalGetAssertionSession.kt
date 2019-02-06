@@ -3,7 +3,6 @@ package webauthnkit.core.authenticator.internal.session
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
-import webauthnkit.core.*
 
 import webauthnkit.core.authenticator.AuthenticatorAssertionResult
 import webauthnkit.core.authenticator.AuthenticatorData
@@ -14,6 +13,9 @@ import webauthnkit.core.authenticator.internal.InternalAuthenticatorSetting
 import webauthnkit.core.authenticator.internal.key.KeySupportChooser
 import webauthnkit.core.authenticator.internal.PublicKeyCredentialSource
 import webauthnkit.core.authenticator.internal.ui.UserConsentUI
+import webauthnkit.core.error.*
+import webauthnkit.core.data.*
+import webauthnkit.core.error.TimeoutException
 import webauthnkit.core.util.WAKLogger
 import webauthnkit.core.util.ByteArrayUtil
 

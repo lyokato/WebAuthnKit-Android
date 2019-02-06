@@ -12,11 +12,7 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import org.jetbrains.anko.*
-import webauthnkit.core.AuthenticatorTransport
-import webauthnkit.core.GetAssertionResponse
-import webauthnkit.core.PublicKeyCredentialRequestOptions
-
-import webauthnkit.core.UserVerificationRequirement
+import webauthnkit.core.data.*
 import webauthnkit.core.authenticator.internal.ui.UserConsentUI
 import webauthnkit.core.authenticator.internal.ui.UserConsentUIFactory
 import webauthnkit.core.client.WebAuthnClient
@@ -149,9 +145,8 @@ class AuthenticationActivity : AppCompatActivity() {
 
 
         consentUI = UserConsentUIFactory.create(this)
-        WAKLogger.d(TAG, "create consentUI===========================================")
 
-        return WebAuthnClient.internal(
+        return WebAuthnClient.create(
             activity = this,
             origin   = "https://example.org",
             ui       = consentUI!!
