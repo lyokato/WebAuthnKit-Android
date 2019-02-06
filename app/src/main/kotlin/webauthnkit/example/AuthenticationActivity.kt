@@ -145,9 +145,8 @@ class AuthenticationActivity : AppCompatActivity() {
 
 
         consentUI = UserConsentUIFactory.create(this)
-        WAKLogger.d(TAG, "create consentUI===========================================")
 
-        return WebAuthnClient.internal(
+        return WebAuthnClient.create(
             activity = this,
             origin   = "https://example.org",
             ui       = consentUI!!

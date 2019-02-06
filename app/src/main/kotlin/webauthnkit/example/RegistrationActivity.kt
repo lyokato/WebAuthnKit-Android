@@ -246,7 +246,7 @@ class RegistrationActivity : AppCompatActivity() {
 
         consentUI = UserConsentUIFactory.create(this)
 
-        val webAuthnClient = WebAuthnClient.internal(
+        val webAuthnClient = WebAuthnClient.create(
             activity = this,
             origin   = "https://example.org",
             ui       = consentUI!!

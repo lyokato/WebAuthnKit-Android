@@ -26,7 +26,7 @@ class WebAuthnClient(
     companion object {
         val TAG = WebAuthnClient::class.simpleName
 
-        fun internal(
+        fun create(
             activity: FragmentActivity,
             origin:   String,
             ui:       UserConsentUI

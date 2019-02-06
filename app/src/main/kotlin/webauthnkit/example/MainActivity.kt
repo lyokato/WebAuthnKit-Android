@@ -103,7 +103,7 @@ class MainActivity : AppCompatActivity() {
     @NeedsPermission(Manifest.permission.ACCESS_FINE_LOCATION)
     fun goToBleAuthenticationActivity() {
         if (checkPermission()) {
-            val intent = Intent(this, AuthenticationActivity::class.java)
+            val intent = Intent(this, BleAuthenticatorAuthenticationActivity::class.java)
             startActivity(intent)
         }
     }
