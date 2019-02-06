@@ -11,10 +11,12 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 
-import webauthnkit.core.*
+import webauthnkit.core.data.*
 import webauthnkit.core.authenticator.AuthenticatorAssertionResult
 import webauthnkit.core.authenticator.GetAssertionSession
 import webauthnkit.core.authenticator.GetAssertionSessionListener
+import webauthnkit.core.error.BadOperationException
+import webauthnkit.core.error.ErrorReason
 import webauthnkit.core.util.WAKLogger
 import webauthnkit.core.util.ByteArrayUtil
 

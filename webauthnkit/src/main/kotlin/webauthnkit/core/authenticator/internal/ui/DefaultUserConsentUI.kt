@@ -14,12 +14,12 @@ import kotlin.coroutines.Continuation
 import kotlin.coroutines.resumeWithException
 
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import webauthnkit.core.*
 
 import webauthnkit.core.authenticator.internal.PublicKeyCredentialSource
 import webauthnkit.core.authenticator.internal.ui.dialog.*
+import webauthnkit.core.error.*
 import webauthnkit.core.util.WAKLogger
-import java.util.*
+import webauthnkit.core.data.*
 
 @ExperimentalUnsignedTypes
 @ExperimentalCoroutinesApi

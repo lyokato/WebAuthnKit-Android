@@ -12,6 +12,13 @@
     -->
     <uses-permission android:name="android.permission.INTERNET" />
 
+    <!-- These are required for BLE -->
+    <uses-permission android:name="android.permission.BLUETOOTH" />
+    <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" />
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <uses-feature
+            android:name="android.hardware.bluetooth_le"
+            android:required="true" />
 
     <application
             android:allowBackup="true"
@@ -24,7 +31,7 @@
         <activity
                 android:name=".AuthenticationActivity"
                 android:label="@string/title_activity_authentication"
-                android:theme="@style/AppTheme.NoActionBar">
+                android:theme="@style/AppTheme">
         </activity>
         <activity
                 android:name=".AuthenticationResultActivity"
@@ -32,14 +39,24 @@
                 android:theme="@style/AppTheme.NoActionBar">
         </activity>
         <activity
+                android:name=".BleAuthenticatorAuthenticationActivity"
+                android:label="@string/title_activity_authentication"
+                android:theme="@style/AppTheme">
+        </activity>
+        <activity
                 android:name=".RegistrationActivity"
                 android:label="@string/title_activity_registration"
-                android:theme="@style/AppTheme.NoActionBar">
+                android:theme="@style/AppTheme">
         </activity>
         <activity
                 android:name=".RegistrationResultActivity"
                 android:label="@string/title_activity_registration"
                 android:theme="@style/AppTheme.NoActionBar">
+        </activity>
+        <activity
+                android:name=".BleAuthenticatorRegistrationActivity"
+                android:label="@string/title_activity_registration"
+                android:theme="@style/AppTheme">
         </activity>
         <activity android:name=".MainActivity">
             <intent-filter>

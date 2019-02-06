@@ -2,7 +2,7 @@ package webauthnkit.core.authenticator.internal.key
 
 import android.content.Context
 import android.security.KeyPairGeneratorSpec
-import webauthnkit.core.InvalidStateException
+import webauthnkit.core.error.InvalidStateException
 import webauthnkit.core.util.WAKLogger
 import webauthnkit.core.authenticator.*
 import webauthnkit.core.util.ByteArrayUtil

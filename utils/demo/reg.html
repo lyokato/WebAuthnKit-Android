@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>WebAuthn Demo</title>
+  <meta charset='UTF-8'/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+  .demo-card-wide.mdl-card {
+    width: 512px;
+    padding: 20px
+  }
+  .demo-card-wide > .mdl-card__title {
+    color: #000;
+    height: 50px;
+  }
+  .demo-card-wide > .mdl-card__menu {
+    color: #000;
+  }
+</style>
+</head>
+<body>
+
+  <div class="mdl-layout mdl-js-layout">
+    <header class="mdl-layout__header mdl-layout__header--scroll">
+      <div class="mdl-layout__header-row">
+        <!-- Title -->
+        <span class="mdl-layout-title">WebAuthn Demo</span>
+        <!-- Add spacer, to align navigation to the right -->
+        <div class="mdl-layout-spacer"></div>
+        <!-- Navigation -->
+        <nav class="mdl-navigation">
+          <a class="mdl-navigation__link" href="#">Registration</a>
+          <a class="mdl-navigation__link" href="auth.html">Authentication</a>
+        </nav>
+      </div>
+    </header>
+
+  <main class="mdl-layout__content">
+
+    <div class="mdl-grid">
+      <div class="mdl-cell mdl-cell--6-col">
+        <h3>Registration</h3>
+      </div>
+    </div>
+
+    <div class="mdl-grid">
+      <div class="mdl-cell mdl-cell--6-col">
+
+          <div class="demo-card-wide mdl-card mdl-shadow--2dp">
+          <form id="regform" action="#">
+
+            <div class="mdl-card__title">
+              <h2 class="mdl-card__title-text">Request</h2>
+            </div>
+
+            <div class="mdl-card__supporting-text">User Setting</div>
+
+            <label for='userId'>ID</label>
+            <div class="mdl-layout-spacer"></div>
+
+            <input class="mdl-textfield__input" type='text' name='userId' value="lyokato"><br />
+
+            <label for='userName'>Name</label>
+            <input class="mdl-textfield__input" type='text' name='userName' value="lyokato"><br />
+
+            <label for='userDisplayName'>DisplayName</label>
+            <input class="mdl-textfield__input" type='text' name='userDisplayName' value="Lyo Kato"><br />
+
+            <label for='userIcon'>IconURL</label>
+            <input class="mdl-textfield__input" type='text' name='userIcon' value="https://www.gravatar.com/avatar/0b63462eb18efbfb764b0c226abff4a0?s=440&d=retro"><br />
+
+            <div class="mdl-card__supporting-text">Relying Party Setting</div>
+
+            <label for='rpId'>ID</label>
+            <input class="mdl-textfield__input" type='text' name='rpId' value="localhost"><br />
+
+            <label for='rpName'>Name</label>
+            <input class="mdl-textfield__input" type='text' name='rpName' value="localhost"><br />
+
+            <label for='rpIcon'>IconURL</label>
+            <input class="mdl-textfield__input" type='text' name='rpIcon' value="https://developers.google.com/identity/images/g-logo.png"><br />
+
+          </form>
+
+            <div class="mdl-card__actions mdl-card--border">
+              <a class="mdl-button mdl-button--colored mdl-js-button mdl-js-ripple-effect" id="register_button">
+                REGISTER
+              </a>
+            </div>
+          </div> <!-- card -->
+      </div>
+
+      <div class="mdl-cell mdl-cell--6-col">
+
+          <div class="demo-card-wide mdl-card mdl-shadow--2dp">
+            <div class="mdl-card__title">
+              <h2 class="mdl-card__title-text">Response</h2>
+            </div>
+
+            <div class="mdl-card__supporting-text">CredentialId</div>
+            <div class="mdl-card__supporting-text" id="resCredId">___</div>
+
+            <div class="mdl-card__supporting-text">ClientDataJSON</div>
+            <div class="mdl-card__supporting-text" id="resClientDataJSON">___</div>
+
+            <div class="mdl-card__supporting-text">AttestationObject</div>
+            <div class="mdl-card__supporting-text" id="resAttestationObject">___</div>
+
+          </div>
+      </div>
+    </div>
+  </main>
+  </div>
+
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+  <script src="base64url-arraybuffer.js"></script>
+  <script src="helpers.js"></script>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
+  <link rel="stylesheet" href="https://code.getmdl.io/1.3.0/material.indigo-pink.min.css">
+  <script defer src="https://code.getmdl.io/1.3.0/material.min.js"></script>
+  <script>
+    $(document).ready(() => {
+
+      $('#register_button').click(() => {
+
+        console.log("clicked")
+
+        const userId          = $("#regform [name=userId]").val()
+        const userName        = $("#regform [name=userName]").val()
+        const userDisplayName = $("#regform [name=userDisplayName]").val()
+        const userIcon        = $("#regform [name=userIcon]").val()
+
+        const rpId = $("#regform [name=rpId]").val()
+        const rpName = $("#regform [name=rpName]").val()
+        const rpIcon = $("#regform [name=rpIcon]").val()
+
+        const publicKey = {
+
+          challenge: new Uint8Array(generateRandomBuffer()),
+
+          rp: {
+            id: rpId,
+            name: rpName,
+            icon: rpIcon
+          },
+
+          user: {
+            id: new Uint8Array(base64url.decode(userId)),
+            name: userName,
+            displayName: userDisplayName,
+            icon: userIcon
+          },
+
+          authenticatorSelection: {
+            //requireResidentKey: true,
+            authenticatorAttachment: "cross-platform",
+            userVerification: "required"
+          },
+
+          attestation: 'direct',
+
+          pubKeyCredParams: [{type: "public-key", alg: -7}]
+        }
+
+        console.log(JSON.stringify(publicKey))
+
+        navigator.credentials.create({ publicKey })
+          .then((cred) => {
+
+            console.log(cred.toString())
+
+            const {id, rawId, response, type} = cred
+            const {attestationObject, clientDataJSON} = response
+
+            $('#resCredId').text(base64url.encode(rawId))
+            $('#resClientDataJSON').text(base64url.encode(clientDataJSON))
+            $('#resAttestationObject').text(base64url.encode(attestationObject))
+
+          }).catch((error) => {
+            console.log(error.toString())
+
+          })
+      })
+
+    })
+  </script>
+</body>
+</html>
