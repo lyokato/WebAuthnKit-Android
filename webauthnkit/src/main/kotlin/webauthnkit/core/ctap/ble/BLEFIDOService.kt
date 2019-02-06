@@ -8,15 +8,14 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import webauthnkit.core.data.*
-import webauthnkit.core.authenticator.GetAssertionSession
-import webauthnkit.core.client.WebAuthnClient
+import webauthnkit.core.authenticator.Authenticator
 import webauthnkit.core.ctap.CTAPCommandType
 import webauthnkit.core.ctap.ble.frame.FrameBuffer
 import webauthnkit.core.ctap.ble.frame.FrameSplitter
 import webauthnkit.core.ctap.ble.peripheral.*
 import webauthnkit.core.ctap.ble.peripheral.annotation.*
-import webauthnkit.core.util.CBORReader
+import webauthnkit.core.ctap.options.GetAssertionOptions
+import webauthnkit.core.ctap.options.MakeCredentialOptions
 import webauthnkit.core.util.CBORWriter
 import webauthnkit.core.util.WAKLogger
 import java.util.*
@@ -30,10 +29,13 @@ interface BLEFIDOServiceListener {
 @ExperimentalCoroutinesApi
 @ExperimentalUnsignedTypes
 class BLEFIDOService(
-    private val context:  Context,
-    private val client:   WebAuthnClient,
-    private val listener: BLEFIDOServiceListener?
+    private val context:       Context,
+    private val authenticator: Authenticator,
+    private val listener:      BLEFIDOServiceListener?
 ) {
+
+    private val operationManager = BLEFIDOOperationManager(authenticator)
+
     var intervalDelayTimeMillis: Long = 50
     var maxPacketDataSize: Int = 20
     var timeoutSeconds: Long = 60
@@ -210,58 +212,18 @@ class BLEFIDOService(
     private var isInSession: Boolean = false
 
     private fun handleCTAPMakeCredential(value: ByteArray) {
+
         WAKLogger.d(TAG, "handleCTAP: MakeCredential")
 
-        val params = CBORReader(value).readStringKeyMap()
-        if (params == null) {
-            closeByBLEError(BLEErrorType.InvalidPar)
+        // TODO Busy check
+
+        val (options, error) =
+            MakeCredentialOptions.fromByteArray(value)
+
+        if (error != null) {
+            closeByBLEError(error)
             return
         }
-
-        if (!params.containsKey("clientDataHash")) {
-            closeByBLEError(BLEErrorType.InvalidPar)
-            return
-        }
-        if (params["clientDataHash"] is ByteArray) {
-            closeByBLEError(BLEErrorType.InvalidPar)
-            return
-        }
-        var clientDataHash = params["clientDataHash"] as ByteArray
-
-        if (!params.containsKey("rp")) {
-            closeByBLEError(BLEErrorType.InvalidPar)
-            return
-        }
-        if (params["rp"] is Map<*,*>) {
-            closeByBLEError(BLEErrorType.InvalidPar)
-            return
-        }
-        var rp = params["rp"] as Map<String, Any>
-
-        if (!params.containsKey("user")) {
-            closeByBLEError(BLEErrorType.InvalidPar)
-            return
-        }
-        if (params["user"] is Map<*,*>) {
-            closeByBLEError(BLEErrorType.InvalidPar)
-            return
-        }
-        var user = params["user"] as Map<String, Any>
-
-        params["pubKeyCredParams"]
-
-        // params["excludeList"] optional
-        // params["extensions"]
-
-        if (params.contains("options")) {
-
-        }
-
-        // params["pinAuth"] optional
-        // params["pinProtocol"] optional
-
-        val options = PublicKeyCredentialCreationOptions()
-        // TODO parameter validation, and build option
 
         if (isInSession) {
             WAKLogger.d(TAG, "handleCTAP: MakeCredential - already in session")
@@ -270,32 +232,35 @@ class BLEFIDOService(
 
         isInSession = true
 
-
         GlobalScope.launch {
             try {
-                val cred = client.create(options)
-                // val cbor = buildResponseCBOR(cred)
-                // handleResponse(MSG, cbor)
+                val res = operationManager.create(
+                    options = options!!,
+                    timeout = 60000L
+                )
+                handleResponse(BLECommandType.MSG, res)
             } catch (e: Exception) {
-                // Processing Error
+                // TODO Proper Processing Error
+                closeByBLEError(BLEErrorType.Other)
             } finally {
                 isInSession = false
             }
         }
     }
 
-    private var getAssertionSession: GetAssertionSession? = null
-
     private fun handleCTAPGetAssertion(value: ByteArray) {
+
         WAKLogger.d(TAG, "handleCTAP: GetAssertion")
-        val params = CBORReader(value).readStringKeyMap()
-        if (params == null) {
-            closeByBLEError(BLEErrorType.InvalidPar)
+
+        // TODO Busy check
+
+        val (options, error) =
+            GetAssertionOptions.fromByteArray(value)
+
+        if (error != null) {
+            closeByBLEError(error)
             return
         }
-
-        val options = PublicKeyCredentialRequestOptions()
-        // TODO parameter validation, and build option
 
         if (isInSession) {
             WAKLogger.d(TAG, "handleCTAP: GetAssertion - already in session")
@@ -306,11 +271,14 @@ class BLEFIDOService(
 
         GlobalScope.launch {
             try {
-                val assertion = client.get(options)
-                // val cbor = buildResponseCBOR(assertion)
-                // handleResponse(MSG, cbor)
+                val res = operationManager.get(
+                    options = options!!,
+                    timeout = 60000L
+                )
+                handleResponse(BLECommandType.MSG, res)
             } catch (e: Exception) {
-                // Processing Error
+                // TODO Proper Processing Error
+                closeByBLEError(BLEErrorType.Other)
             } finally {
                 isInSession = false
             }

@@ -20,10 +20,6 @@ open class PeripheralService(val uuidString: String) {
         val TAG = PeripheralService::class.simpleName
     }
 
-    protected fun init() {
-        // template method
-    }
-
     private val characteristics: MutableMap<String, Characteristic> = mutableMapOf()
 
     internal fun canHandle(event: BLEEvent, uuid: String): Boolean {
@@ -80,8 +76,6 @@ open class PeripheralService(val uuidString: String) {
 
 
     internal fun analyzeCharacteristicsDefinition() {
-
-        init()
 
         this::class.java.methods.forEach {
 

@@ -18,6 +18,8 @@ import webauthnkit.core.authenticator.MakeCredentialSession
 import webauthnkit.core.authenticator.MakeCredentialSessionListener
 import webauthnkit.core.client.operation.OperationListener
 import webauthnkit.core.client.operation.OperationType
+import webauthnkit.core.ctap.options.MakeCredentialOptions
+import webauthnkit.core.ctap.response.MakeCredentialResponseBuilder
 import webauthnkit.core.util.CBORWriter
 import webauthnkit.core.util.WAKLogger
 
@@ -25,14 +27,9 @@ import webauthnkit.core.util.WAKLogger
 @ExperimentalCoroutinesApi
 @ExperimentalUnsignedTypes
 class CreateOperation(
-    private val clientDataHash:          ByteArray,
-    private val rp:                      PublicKeyCredentialRpEntity,
-    private val user:                    PublicKeyCredentialUserEntity,
-    private val pubKeyCredParams:        List<PublicKeyCredentialParameters>,
-    private val requireUserVerification: Boolean, // op.uv
-    private val requireResidentKey:      Boolean, // op.rk
-    private val session:                 MakeCredentialSession,
-    private val lifetimeTimer:           Long
+    private val options:       MakeCredentialOptions,
+    private val session:       MakeCredentialSession,
+    private val lifetimeTimer: Long
 ) {
 
     companion object {
@@ -54,32 +51,32 @@ class CreateOperation(
                 return
             }
 
-            if (requireResidentKey && !session.canStoreResidentKey()) {
+            if (options.requireResidentKey && !session.canStoreResidentKey()) {
                 WAKLogger.d(TAG, "This authenticator can't store resident-key")
                 stop(ErrorReason.Unsupported)
                 return
             }
 
-            if (requireUserVerification && !session.canPerformUserVerification()) {
+            if (options.requireUserVerification && !session.canPerformUserVerification()) {
                 WAKLogger.d(TAG, "This authenticator can't perform user verification")
                 stop(ErrorReason.Unsupported)
                 return
             }
 
-            val requireUserPresence = !requireUserVerification
+            val requireUserPresence = !options.requireUserVerification
 
             // TODO currently not supported
             val excludeCredentialDescriptorList =
                 arrayListOf<PublicKeyCredentialDescriptor>()
 
             session.makeCredential(
-                hash                            = clientDataHash,
-                rpEntity                        = rp,
-                userEntity                      = user,
-                requireResidentKey              = requireResidentKey,
+                hash                            = options.clientDataHash,
+                rpEntity                        = options.rp,
+                userEntity                      = options.user,
+                requireResidentKey              = options.requireResidentKey,
                 requireUserPresence             = requireUserPresence,
-                requireUserVerification         = requireUserVerification,
-                credTypesAndPubKeyAlgs          = pubKeyCredParams,
+                requireUserVerification         = options.requireUserVerification,
+                credTypesAndPubKeyAlgs          = options.pubKeyCredParams,
                 excludeCredentialDescriptorList = excludeCredentialDescriptorList
             )
         }
@@ -87,19 +84,17 @@ class CreateOperation(
         override fun onCredentialCreated(session: MakeCredentialSession, attestationObject: AttestationObject) {
             WAKLogger.d(TAG, "onCredentialCreated")
 
+            val (result, error) =
+                MakeCredentialResponseBuilder(attestationObject).build()
 
-            // TODO try catch
-
-            val map = mutableMapOf<String, Any>()
-            map["attStmt"]  = attestationObject.attStmt
-            map["fmt"]      = attestationObject.fmt
-            map["authData"] = attestationObject.authData.toBytes()!!
-
-            val result = CBORWriter().putStringKeyMap(map).compute()
+            if (error != null) {
+                stop(error)
+                return
+            }
 
             completed()
 
-            continuation?.resume(result)
+            continuation?.resume(result!!)
             continuation = null
 
         }

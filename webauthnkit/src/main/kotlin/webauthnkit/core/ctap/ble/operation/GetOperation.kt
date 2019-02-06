@@ -17,29 +17,25 @@ import webauthnkit.core.authenticator.GetAssertionSession
 import webauthnkit.core.authenticator.GetAssertionSessionListener
 import webauthnkit.core.client.operation.OperationListener
 import webauthnkit.core.client.operation.OperationType
+import webauthnkit.core.ctap.options.GetAssertionOptions
+import webauthnkit.core.ctap.response.GetAssertionResponseBuilder
 import webauthnkit.core.error.BadOperationException
 import webauthnkit.core.error.ErrorReason
 import webauthnkit.core.util.WAKLogger
-import webauthnkit.core.util.ByteArrayUtil
-import webauthnkit.core.util.CBORWriter
 
 @ExperimentalCoroutinesApi
 @ExperimentalUnsignedTypes
 class GetOperation(
-    private val rpId:                    String,
-    private val clientDataHash:          ByteArray,
-    private val allowCredential:         List<PublicKeyCredentialDescriptor>,
-    private val requireUserVerification: Boolean,
-    private val requireUserPresence:     Boolean,
-    private val session:                 GetAssertionSession,
-    private val lifetimeTimer:           Long
+    private val options:       GetAssertionOptions,
+    private val session:       GetAssertionSession,
+    private val lifetimeTimer: Long
 ) {
 
     companion object {
         val TAG = GetOperation::class.simpleName
     }
 
-    val allowListSize = allowCredential.size
+    val allowListSize = options.allowCredential.size
 
     val opId: String = UUID.randomUUID().toString()
     var listener: OperationListener? = null
@@ -56,18 +52,18 @@ class GetOperation(
                 return
             }
 
-            if (requireUserVerification && !session.canPerformUserVerification()) {
+            if (options.requireUserVerification && !session.canPerformUserVerification()) {
                 WAKLogger.w(TAG, "user verification required, but this authenticator doesn't support")
                 stop(ErrorReason.Unsupported)
                 return
             }
 
             session.getAssertion(
-                rpId                          = rpId,
-                hash                          = clientDataHash,
-                allowCredentialDescriptorList = allowCredential,
-                requireUserVerification       = requireUserVerification,
-                requireUserPresence           = requireUserPresence
+                rpId                          = options.rpId,
+                hash                          = options.clientDataHash,
+                allowCredentialDescriptorList = options.allowCredential,
+                requireUserVerification       = options.requireUserVerification,
+                requireUserPresence           = options.requireUserPresence
             )
 
         }
@@ -79,39 +75,20 @@ class GetOperation(
 
             WAKLogger.d(TAG, "onCredentialDiscovered")
 
-            // TODO UserEntityのidの型をByteArrayにする?
-
-            val user = mutableMapOf<String, Any>()
-            user["id"] = assertion.userHandle!!
-
-            val map = mutableMapOf<String, Any>()
-            map["authData"]            = assertion.authenticatorData
-            map["signature"]           = assertion.signature
-            map["user"]                = user
-            map["numberOfCredentials"] = 1L
-
-            if (allowListSize != 1) {
-                WAKLogger.d(TAG, "onCredentialDiscovered - use selected credId")
-                val selectedCredId = assertion.credentialId
-                if (selectedCredId == null) {
-                    WAKLogger.w(TAG, "selected credential Id not found")
-                    stop(ErrorReason.Unknown)
-                    return
-                }
-
-                val cred = mutableMapOf<String, Any>()
-                cred["type"] = "public-key"
-                cred["id"]   = selectedCredId
-
-                map["credential"] = cred
+            val (result, error) =
+                GetAssertionResponseBuilder(
+                    assertion     = assertion,
+                    allowListSize = allowListSize
+                ).build()
+            if (error != null) {
+                stop(error)
+                return
             }
-
-            val result = CBORWriter().putStringKeyMap(map).compute()
 
             completed()
 
             WAKLogger.d(TAG, "onCredentialDiscovered - resume")
-            continuation?.resume(result)
+            continuation?.resume(result!!)
             continuation = null
 
         }

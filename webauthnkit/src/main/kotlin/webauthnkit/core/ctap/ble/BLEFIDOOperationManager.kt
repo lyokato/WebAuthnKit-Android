@@ -8,6 +8,8 @@ import webauthnkit.core.ctap.ble.operation.CreateOperation
 import webauthnkit.core.ctap.ble.operation.GetOperation
 import webauthnkit.core.client.operation.OperationListener
 import webauthnkit.core.client.operation.OperationType
+import webauthnkit.core.ctap.options.GetAssertionOptions
+import webauthnkit.core.ctap.options.MakeCredentialOptions
 import webauthnkit.core.util.WAKLogger
 
 @ExperimentalCoroutinesApi
@@ -24,25 +26,17 @@ class BLEFIDOOperationManager(
     private val createOperations: MutableMap<String, CreateOperation> = HashMap()
 
     suspend fun get(
-        clientDataHash:          ByteArray,
-        rpId:                    String,
-        allowList:               List<PublicKeyCredentialDescriptor>,
-        requireUserVerification: Boolean, // op.uv
-        requireUserPresence:     Boolean, // op.rk
-        timeout:                 Long
+        options: GetAssertionOptions,
+        timeout: Long
     ): ByteArray {
 
         WAKLogger.d(TAG, "get")
 
         val session = authenticator.newGetAssertionSession()
         val op = GetOperation(
-            clientDataHash          = clientDataHash,
-            rpId                    = rpId,
-            allowCredential         = allowList,
-            session                 = session,
-            requireUserVerification = requireUserVerification,
-            requireUserPresence     = requireUserPresence,
-            lifetimeTimer           = timeout
+            options       = options,
+            session       = session,
+            lifetimeTimer = timeout
         )
         op.listener = this
         getOperations[op.opId] = op
@@ -50,25 +44,15 @@ class BLEFIDOOperationManager(
     }
 
     suspend fun create(
-        clientDataHash:          ByteArray,
-        rp:                      PublicKeyCredentialRpEntity,
-        user:                    PublicKeyCredentialUserEntity,
-        pubKeyCredParams:        List<PublicKeyCredentialParameters>,
-        requireUserVerification: Boolean, // op.uv
-        requireResidentKey:      Boolean, // op.rk
-        timeout:                 Long
+        options: MakeCredentialOptions,
+        timeout: Long
     ): ByteArray {
 
         WAKLogger.d(TAG, "create")
 
         val session = authenticator.newMakeCredentialSession()
         val op = CreateOperation(
-            clientDataHash          = clientDataHash,
-            rp                      = rp,
-            user                    = user,
-            pubKeyCredParams        = pubKeyCredParams,
-            requireUserVerification = requireUserVerification, // op.uv
-            requireResidentKey      = requireResidentKey,      // op.rk
+            options                 = options,
             session                 = session,
             lifetimeTimer           = timeout
         )
