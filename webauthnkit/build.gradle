@@ -18,7 +18,7 @@ publish {
     userOrg = 'lyokato'
     groupId = 'webauthnkit'
     artifactId = 'webauthnkit-core'
-    publishVersion = '0.9.1'
+    publishVersion = '0.9.2'
     desc = 'WebAuthn/FIDO2 library for Android'
     website = 'https://github.com/lyokato/WebAuthnKit-Android'
     repoName = 'maven'

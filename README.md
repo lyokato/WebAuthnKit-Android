@@ -18,7 +18,7 @@ In your application's build.gradle
 
 ```gradle
 dependencies {
-  implementation 'webauthnkit:webauthnkit-core:0.9.1'
+  implementation 'webauthnkit:webauthnkit-core:0.9.2'
 }
 ```
 
@@ -28,7 +28,7 @@ pom
 <dependency>
   <groupId>webauthnkit</groupId>
   <artifactId>webauthnkit-core</artifactId>
-  <version>0.9.1</version>
+  <version>0.9.2</version>
   <type>pom</type>
 </dependency>
 ```
