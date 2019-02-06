@@ -8,7 +8,7 @@ import android.bluetooth.le.BluetoothLeAdvertiser
 import android.content.Context
 import android.content.pm.PackageManager
 import android.os.ParcelUuid
-import webauthnkit.core.ctap.ble.BLEEvent
+import webauthnkit.core.ctap.ble.BleEvent
 import webauthnkit.core.util.WAKLogger
 import java.util.*
 
@@ -209,7 +209,7 @@ class Peripheral(
 
                 val serviceUUID = characteristic.service.uuid
                 if (serviceUUID.toString() == service.uuidString) {
-                    if (service.canHandle(BLEEvent.READ, req.uuid)) {
+                    if (service.canHandle(BleEvent.READ, req.uuid)) {
                         service.dispatchReadRequest(req, res)
                     }
                 }
@@ -234,7 +234,7 @@ class Peripheral(
 
                 val serviceUUID = characteristic.service.uuid
                 if (serviceUUID.toString() == service.uuidString) {
-                    if (service.canHandle(BLEEvent.WRITE, req.uuid)) {
+                    if (service.canHandle(BleEvent.WRITE, req.uuid)) {
                         service.dispatchWriteRequest(req, res)
                     }
                 }

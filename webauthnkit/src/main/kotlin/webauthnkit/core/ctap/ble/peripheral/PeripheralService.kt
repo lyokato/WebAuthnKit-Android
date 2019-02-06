@@ -5,7 +5,7 @@ import android.bluetooth.BluetoothGattCharacteristic
 import android.bluetooth.BluetoothGattServer
 import android.bluetooth.BluetoothGattService
 import webauthnkit.core.error.InvalidStateException
-import webauthnkit.core.ctap.ble.BLEEvent
+import webauthnkit.core.ctap.ble.BleEvent
 import webauthnkit.core.ctap.ble.peripheral.annotation.*
 import webauthnkit.core.util.WAKLogger
 import java.lang.reflect.Method
@@ -23,7 +23,7 @@ open class PeripheralService(val uuidString: String) {
 
     private val characteristics: MutableMap<String, Characteristic> = mutableMapOf()
 
-    internal fun canHandle(event: BLEEvent, uuid: String): Boolean {
+    internal fun canHandle(event: BleEvent, uuid: String): Boolean {
         return if (characteristics.containsKey(uuid)) {
             characteristics.getValue(uuid).canHandle(event)
         } else {
@@ -42,14 +42,14 @@ open class PeripheralService(val uuidString: String) {
     }
 
     internal fun dispatchReadRequest(req: ReadRequest, res: ReadResponse) {
-        if (!canHandle(BLEEvent.READ, req.uuid)) {
+        if (!canHandle(BleEvent.READ, req.uuid)) {
             return
         }
         characteristics.getValue(req.uuid).handleReadRequest(this, req, res)
     }
 
     internal fun dispatchWriteRequest(req: WriteRequest, res: WriteResponse) {
-        if (!canHandle(BLEEvent.WRITE, req.uuid)) {
+        if (!canHandle(BleEvent.WRITE, req.uuid)) {
             return
         }
         val ch = characteristics.getValue(req.uuid)
@@ -91,7 +91,7 @@ open class PeripheralService(val uuidString: String) {
                 WAKLogger.d(TAG, "found a method set @OnRead")
                 if (validReadHandler(it)) {
                     val ch = getOrCreateCharacteristic(readAnnotation.uuid)
-                    ch.addHandler(BLEEvent.READ, it)
+                    ch.addHandler(BleEvent.READ, it)
                     ch.addProperty(BluetoothGattCharacteristic.PROPERTY_READ)
                     val secure: Secure? = it.getAnnotation(Secure::class.java)
                     if (secure != null && secure.value) {
@@ -118,7 +118,7 @@ open class PeripheralService(val uuidString: String) {
                 if (validWriteHandler(it)) {
 
                     val ch = getOrCreateCharacteristic(writeAnnotation.uuid)
-                    ch.addHandler(BLEEvent.WRITE, it)
+                    ch.addHandler(BleEvent.WRITE, it)
 
                     val secure: Secure? = it.getAnnotation(Secure::class.java)
                     if (secure != null && secure.value) {

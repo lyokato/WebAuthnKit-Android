@@ -3,7 +3,7 @@ package webauthnkit.core.ctap.ble.peripheral
 import android.bluetooth.BluetoothDevice
 import android.bluetooth.BluetoothGattCharacteristic
 import android.bluetooth.BluetoothGattDescriptor
-import webauthnkit.core.ctap.ble.BLEEvent
+import webauthnkit.core.ctap.ble.BleEvent
 import webauthnkit.core.util.WAKLogger
 import java.lang.reflect.Method
 import java.util.*
@@ -16,7 +16,7 @@ class Characteristic(
         const val CONFIG_UUID = "00002902-0000-1000-8000-00805f9b34fb"
     }
 
-    private val handlers: MutableMap<BLEEvent, Method> = mutableMapOf()
+    private val handlers: MutableMap<BleEvent, Method> = mutableMapOf()
     private val devicesForNotification: MutableMap<String, BluetoothDevice> = mutableMapOf()
     private var properties: Int = 0
     private var permission: Int = 0
@@ -41,17 +41,17 @@ class Characteristic(
         properties = properties or prop
     }
 
-    fun canHandle(event: BLEEvent): Boolean {
+    fun canHandle(event: BleEvent): Boolean {
         return handlers.containsKey(event)
     }
 
-    fun addHandler(event: BLEEvent, handler: Method) {
+    fun addHandler(event: BleEvent, handler: Method) {
         handlers[event] = handler
     }
 
     fun handleReadRequest(parent: PeripheralService, req: ReadRequest, res: ReadResponse) {
-        if (canHandle(BLEEvent.READ)) {
-            val method = handlers.getValue(BLEEvent.READ)
+        if (canHandle(BleEvent.READ)) {
+            val method = handlers.getValue(BleEvent.READ)
             try {
                 method.invoke(parent, req, res)
             } catch (e: Exception) {
@@ -61,8 +61,8 @@ class Characteristic(
     }
 
     fun handleWriteRequest(parent: PeripheralService, req: WriteRequest, res: WriteResponse) {
-        if (canHandle(BLEEvent.WRITE)) {
-            val method = handlers.getValue(BLEEvent.WRITE)
+        if (canHandle(BleEvent.WRITE)) {
+            val method = handlers.getValue(BleEvent.WRITE)
             try {
                 method.invoke(parent, req, res)
             } catch (e: Exception) {

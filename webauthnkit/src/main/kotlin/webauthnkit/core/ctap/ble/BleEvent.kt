@@ -1,6 +1,6 @@
 package webauthnkit.core.ctap.ble
 
-enum class BLEEvent {
+enum class BleEvent {
     READ,
     WRITE
 }

@@ -30,11 +30,11 @@ interface BLEFIDOServiceListener {
 @ExperimentalUnsignedTypes
 class BLEFIDOService(
     private val context:       Context,
-    private val authenticator: Authenticator,
+                authenticator: Authenticator,
     private val listener:      BLEFIDOServiceListener?
 ) {
 
-    private val operationManager = BLEFIDOOperationManager(authenticator)
+    private val operationManager = BleFidoOperationManager(authenticator)
 
     var intervalDelayTimeMillis: Long = 50
     var maxPacketDataSize: Int = 20
@@ -135,7 +135,7 @@ class BLEFIDOService(
 
     private fun handleBLECancel() {
         WAKLogger.d(TAG, "handleBLE: Cancel")
-        // TODO if active session exists, stop them.
+        operationManager.cancel()
     }
 
     private fun handleBLEKeepAlive(value: ByteArray) {

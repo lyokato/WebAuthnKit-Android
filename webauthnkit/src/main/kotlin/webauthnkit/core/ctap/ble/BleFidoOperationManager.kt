@@ -1,7 +1,6 @@
 package webauthnkit.core.ctap.ble
 
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import webauthnkit.core.data.*
 
 import webauthnkit.core.authenticator.Authenticator
 import webauthnkit.core.ctap.ble.operation.CreateOperation
@@ -14,12 +13,12 @@ import webauthnkit.core.util.WAKLogger
 
 @ExperimentalCoroutinesApi
 @ExperimentalUnsignedTypes
-class BLEFIDOOperationManager(
+class BleFidoOperationManager(
     val authenticator: Authenticator
 ): OperationListener {
 
     companion object {
-        val TAG = BLEFIDOOperationManager::class.simpleName
+        val TAG = BleFidoOperationManager::class.simpleName
     }
 
     private val getOperations: MutableMap<String, GetOperation> = HashMap()
