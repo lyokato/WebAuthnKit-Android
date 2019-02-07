@@ -4,11 +4,14 @@ import android.app.Activity
 import android.bluetooth.BluetoothDevice
 import android.bluetooth.BluetoothGatt
 import android.bluetooth.le.AdvertiseSettings
+import androidx.fragment.app.FragmentActivity
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import webauthnkit.core.authenticator.Authenticator
+import webauthnkit.core.authenticator.internal.InternalAuthenticator
+import webauthnkit.core.authenticator.internal.ui.UserConsentUI
 import webauthnkit.core.ctap.CTAPCommandType
 import webauthnkit.core.ctap.ble.frame.FrameBuffer
 import webauthnkit.core.ctap.ble.frame.FrameSplitter
@@ -25,6 +28,13 @@ interface BleFidoServiceListener {
     fun onClosed()
 }
 
+class BleFidoServiceConfig {
+    val deviceName        = "Android"
+    val manufacturerName  = "WebAuthnKit(Android)"
+    val modelNumber       = "0.0.0"
+    val firmwareRevision  = "0.0.0"
+}
+
 @ExperimentalCoroutinesApi
 @ExperimentalUnsignedTypes
 class BleFidoService(
@@ -34,6 +44,8 @@ class BleFidoService(
 ) {
 
     private val operationManager = BleFidoOperationManager(authenticator)
+
+    val config = BleFidoServiceConfig()
 
     var fragmentedResponseIntervalMilliSeconds: Long = 20
     var maxPacketDataSize: Int = 20
@@ -45,6 +57,24 @@ class BleFidoService(
         val FIDO_UUID = "0000FFFD-0000-1000-8000-00805F9B34FB"
         val GENERIC_ACCESS_UUID = "00001800-0000-1000-8000-00805F9B34FB"
         val DEVICE_INFORMATION_UUID = "0000180A-0000-1000-8000-00805F9B34FB"
+
+        fun create(
+            activity: FragmentActivity,
+            ui:       UserConsentUI,
+            listener: BleFidoServiceListener?
+        ): BleFidoService {
+
+            val authenticator = InternalAuthenticator(
+                activity = activity,
+                ui       = ui
+            )
+
+            return BleFidoService(
+                activity      = activity,
+                authenticator = authenticator,
+                listener      = listener
+            )
+        }
     }
 
     private val peripheralListener = object: PeripheralListener {
@@ -528,8 +558,7 @@ class BleFidoService(
             @Secure(false)
             fun deviceName(req: ReadRequest, res: ReadResponse) {
                 WAKLogger.d(TAG, "@Read: deviceName")
-                // TODO Make configurable
-                val bytes = "Android(WebAuthnKit)".toByteArray(charset = Charsets.UTF_8)
+                val bytes = config.deviceName.toByteArray(charset = Charsets.UTF_8)
                 res.write(bytes)
             }
 
@@ -550,10 +579,9 @@ class BleFidoService(
 
             @OnRead("00002A29-0000-1000-8000-00805F9B34FB")
             @Secure(false)
-            fun manifactureName(req: ReadRequest, res: ReadResponse) {
-                WAKLogger.d(TAG, "@Read: manifactureName")
-                // TODO Make configurable
-                val bytes = "Android(WebAuthnKit)".toByteArray(charset = Charsets.UTF_8)
+            fun manufactureName(req: ReadRequest, res: ReadResponse) {
+                WAKLogger.d(TAG, "@Read: manufactureName")
+                val bytes = config.manufacturerName.toByteArray(charset = Charsets.UTF_8)
                 res.write(bytes)
             }
 
@@ -561,8 +589,7 @@ class BleFidoService(
             @Secure(false)
             fun modelNumber(req: ReadRequest, res: ReadResponse) {
                 WAKLogger.d(TAG, "@Read: modelNumber")
-                // TODO Make configurable
-                val bytes = "0.9.2".toByteArray(charset = Charsets.UTF_8)
+                val bytes = config.modelNumber.toByteArray(charset = Charsets.UTF_8)
                 res.write(bytes)
             }
 
@@ -570,8 +597,7 @@ class BleFidoService(
             @Secure(false)
             fun firmwareRevision(req: ReadRequest, res: ReadResponse) {
                 WAKLogger.d(TAG, "@Read: firmwareRevision")
-                // TODO Make configurable
-                val bytes = "0.9.2".toByteArray(charset = Charsets.UTF_8)
+                val bytes = config.firmwareRevision.toByteArray(charset = Charsets.UTF_8)
                 res.write(bytes)
             }
 

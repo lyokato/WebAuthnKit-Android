@@ -102,17 +102,10 @@ class BleAuthenticatorRegistrationActivity : AppCompatActivity() {
 
         consentUI = UserConsentUIFactory.create(this)
 
-        // TODO make this process more easy
-
-        val authenticator = InternalAuthenticator(
-            activity = this,
-            ui       = consentUI!!
-        )
-
-        bleFidoService = BleFidoService(
-            activity      = this,
-            authenticator = authenticator,
-            listener      = bleServiceListener
+        bleFidoService = BleFidoService.create(
+            activity  = this,
+            ui        = consentUI!!,
+            listener  = bleServiceListener
         )
     }
 
