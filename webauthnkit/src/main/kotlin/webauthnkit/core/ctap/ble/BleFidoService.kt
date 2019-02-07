@@ -413,7 +413,7 @@ class BleFidoService(
 
     private fun createPeripheral(): Peripheral {
 
-        val service = object: PeripheralService(FIDO_UUID) {
+        val fidoService = object: PeripheralService(FIDO_UUID, true) {
 
             @OnWrite("F1D0FFF1-DEAA-ECEE-B42F-C9BA7ED623BB")
             @ResponseNeeded(true)
@@ -520,7 +520,10 @@ class BleFidoService(
 
         }
 
-        return Peripheral(activity.applicationContext, service, peripheralListener)
+        return PeripheralBuilder(activity.applicationContext, peripheralListener)
+            .service(fidoService)
+            .build()
+
     }
 
 }

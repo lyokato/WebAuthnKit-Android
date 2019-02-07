@@ -12,7 +12,10 @@ import webauthnkit.core.util.WAKLogger
 import java.lang.reflect.Method
 import java.util.*
 
-open class PeripheralService(val uuidString: String) {
+open class PeripheralService(
+    val uuidString: String,
+    val primary:    Boolean
+) {
 
     val uuid = UUID.fromString(uuidString)
 
@@ -67,15 +70,21 @@ open class PeripheralService(val uuidString: String) {
         }
     }
 
+    private fun serviceType(): Int {
+        return if (primary) {
+            BluetoothGattService.SERVICE_TYPE_PRIMARY
+        } else {
+            BluetoothGattService.SERVICE_TYPE_SECONDARY
+        }
+    }
+
     internal fun createRaw(): BluetoothGattService {
-        val service = BluetoothGattService(uuid,
-            BluetoothGattService.SERVICE_TYPE_PRIMARY)
+        val service = BluetoothGattService(uuid, serviceType())
         characteristics.values.forEach {
             service.addCharacteristic(it.createRaw())
         }
         return service
     }
-
 
     internal fun analyzeCharacteristicsDefinition() {
 
