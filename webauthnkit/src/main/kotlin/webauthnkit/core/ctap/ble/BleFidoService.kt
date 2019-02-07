@@ -42,7 +42,9 @@ class BleFidoService(
     companion object {
         val TAG = BleFidoService::class.simpleName
         // 16 bit service UUID (FFFD)
-        val FIDO_UUID = "0000FFFD-0000-1000-8000-00805F9B34FB".toLowerCase()
+        val FIDO_UUID = "0000FFFD-0000-1000-8000-00805F9B34FB"
+        val GENERIC_ACCESS_UUID = "00001800-0000-1000-8000-00805F9B34FB"
+        val DEVICE_INFORMATION_UUID = "0000180A-0000-1000-8000-00805F9B34FB"
     }
 
     private val peripheralListener = object: PeripheralListener {
@@ -519,9 +521,66 @@ class BleFidoService(
             }
 
         }
+        val genericAccessService = object: PeripheralService(GENERIC_ACCESS_UUID, false) {
+
+            @OnRead("00002A00-0000-1000-8000-00805F9B34FB")
+            @Secure(false)
+            fun deviceName(req: ReadRequest, res: ReadResponse) {
+                WAKLogger.d(TAG, "@Read: deviceName")
+                // TODO Make configurable
+                val bytes = "Android(WebAuthnKit)".toByteArray(charset = Charsets.UTF_8)
+                res.write(bytes)
+            }
+
+            @OnRead("00002A01-0000-1000-8000-00805F9B34FB")
+            @Secure(false)
+            fun appearance(req: ReadRequest, res: ReadResponse) {
+                WAKLogger.d(TAG, "@Read: appearance")
+
+                // TODO Make configurable
+                // first 10 bit == 1 -> Phone
+                val b1 = 0b00000000.toByte()
+                val b2 = 0b01000000.toByte()
+                res.write(byteArrayOf(b1, b2))
+            }
+        }
+
+        val deviceInformationAccessService = object: PeripheralService(DEVICE_INFORMATION_UUID, false) {
+
+            @OnRead("00002A29-0000-1000-8000-00805F9B34FB")
+            @Secure(false)
+            fun manifactureName(req: ReadRequest, res: ReadResponse) {
+                WAKLogger.d(TAG, "@Read: manifactureName")
+                // TODO Make configurable
+                val bytes = "Android(WebAuthnKit)".toByteArray(charset = Charsets.UTF_8)
+                res.write(bytes)
+            }
+
+            @OnRead("00002A24-0000-1000-8000-00805F9B34FB")
+            @Secure(false)
+            fun modelNumber(req: ReadRequest, res: ReadResponse) {
+                WAKLogger.d(TAG, "@Read: modelNumber")
+                // TODO Make configurable
+                val bytes = "0.9.2".toByteArray(charset = Charsets.UTF_8)
+                res.write(bytes)
+            }
+
+            @OnRead("00002A26-0000-1000-8000-00805F9B34FB")
+            @Secure(false)
+            fun firmwareRevision(req: ReadRequest, res: ReadResponse) {
+                WAKLogger.d(TAG, "@Read: firmwareRevision")
+                // TODO Make configurable
+                val bytes = "0.9.2".toByteArray(charset = Charsets.UTF_8)
+                res.write(bytes)
+            }
+
+        }
+
 
         return PeripheralBuilder(activity.applicationContext, peripheralListener)
             .service(fidoService)
+            .service(genericAccessService)
+            .service(deviceInformationAccessService)
             .build()
 
     }
