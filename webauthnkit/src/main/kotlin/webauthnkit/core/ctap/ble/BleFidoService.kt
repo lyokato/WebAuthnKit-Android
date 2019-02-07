@@ -419,7 +419,7 @@ class BleFidoService(
 
             @OnWrite("F1D0FFF1-DEAA-ECEE-B42F-C9BA7ED623BB")
             @ResponseNeeded(true)
-            @Secure(false)
+            @Secure(true)
             fun controlPoint(req: WriteRequest, res: WriteResponse) {
                 WAKLogger.d(TAG, "@Write: controlPoint")
 
@@ -450,7 +450,7 @@ class BleFidoService(
 
             @OnRead("F1D0FFF2-DEAA-ECEE-B42F-C9BA7ED623BB")
             @Notifiable(true)
-            @Secure(false)
+            @Secure(true)
             fun status(req: ReadRequest, res: ReadResponse) {
                 WAKLogger.d(TAG, "@Read: status")
                 WAKLogger.d(TAG, "This characteristic is just for notification")
@@ -459,7 +459,7 @@ class BleFidoService(
             }
 
             @OnRead("F1D0FFF3-DEAA-ECEE-B42F-C9BA7ED623BB")
-            @Secure(false)
+            @Secure(true)
             fun controlPointLength(req: ReadRequest, res: ReadResponse) {
                 WAKLogger.d(TAG, "@Read: controlPointLength")
                 if (!isLockedBy(req.device.address)) {
@@ -474,7 +474,7 @@ class BleFidoService(
 
             @OnWrite("F1D0FFF4-DEAA-ECEE-B42F-C9BA7ED623BB")
             @ResponseNeeded(true)
-            @Secure(false)
+            @Secure(true)
             fun serviceRevisionBitFieldWrite(req: WriteRequest, res: WriteResponse) {
                 WAKLogger.d(TAG, "@Write: serviceRevisionBitField")
 
@@ -493,7 +493,7 @@ class BleFidoService(
             }
 
             @OnRead("F1D0FFF4-DEAA-ECEE-B42F-C9BA7ED623BB")
-            @Secure(false)
+            @Secure(true)
             fun serviceRevisionBitFieldRead(req: ReadRequest, res: ReadResponse) {
                 WAKLogger.d(TAG, "@Read: serviceRevisionBitField")
 
@@ -521,6 +521,7 @@ class BleFidoService(
             }
 
         }
+
         val genericAccessService = object: PeripheralService(GENERIC_ACCESS_UUID, false) {
 
             @OnRead("00002A00-0000-1000-8000-00805F9B34FB")
