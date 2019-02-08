@@ -38,7 +38,7 @@ class Peripheral(
     private var advertiser: BluetoothLeAdvertiser? = null
     private var advertiseCallback: AdvertiseCallback? = null
 
-    var advertiseMode = AdvertiseSettings.ADVERTISE_MODE_LOW_LATENCY
+    var advertiseMode = AdvertiseSettings.ADVERTISE_MODE_BALANCED
     var advertiseTxPower = AdvertiseSettings.ADVERTISE_TX_POWER_HIGH
 
     var includeTxPower = true

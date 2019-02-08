@@ -4,7 +4,7 @@ import webauthnkit.core.ctap.ble.BLECommandType
 import java.util.*
 
 class FrameSplitter(
-    maxPacketDataSize: Int // should be (ATT_MTU - 3) ?
+    maxPacketDataSize: Int
 ) {
     private val firstFragmentMaxDataSize = maxPacketDataSize - 3
     private val restFragmentsMaxDataSize = maxPacketDataSize - 1

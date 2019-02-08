@@ -115,7 +115,7 @@ class BleFidoService(
         override fun onMtuChanged(device: BluetoothDevice, mtu: Int) {
             WAKLogger.d(TAG, "onMtuChanged")
             if (isLockedBy(device.address)) {
-                maxPacketDataSize = mtu - 3
+                maxPacketDataSize = if (mtu > 512) { 512 } else { mtu }
             }
         }
     }
