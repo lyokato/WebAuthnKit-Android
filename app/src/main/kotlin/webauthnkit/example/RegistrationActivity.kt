@@ -331,6 +331,7 @@ class RegistrationActivity : AppCompatActivity() {
 
             val cred = webAuthnClient.create(options)
             WAKLogger.d(TAG, "CHALLENGE:" + ByteArrayUtil.encodeBase64URL(options.challenge))
+
             showResultActivity(cred)
 
         } catch (e: Exception) {
