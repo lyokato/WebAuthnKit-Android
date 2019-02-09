@@ -3,6 +3,8 @@
 
 This library provides you a way to handle W3C Web Authentication API (a.k.a. WebAuthN / FIDO 2.0) easily.
 
+(You can also get iOS version here https://github.com/lyokato/WebAuthnKit-iOS )
+
 ![android_webauthnkit](https://user-images.githubusercontent.com/30877/52110613-81deba80-2644-11e9-8349-db9880127cfe.jpg)
 
 ## Attention
