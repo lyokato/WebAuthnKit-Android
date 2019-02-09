@@ -19,6 +19,7 @@ import webauthnkit.core.ctap.ble.peripheral.*
 import webauthnkit.core.ctap.ble.peripheral.annotation.*
 import webauthnkit.core.ctap.options.GetAssertionOptions
 import webauthnkit.core.ctap.options.MakeCredentialOptions
+import webauthnkit.core.util.ByteArrayUtil
 import webauthnkit.core.util.CBORWriter
 import webauthnkit.core.util.WAKLogger
 
@@ -115,7 +116,8 @@ class BleFidoService(
         override fun onMtuChanged(device: BluetoothDevice, mtu: Int) {
             WAKLogger.d(TAG, "onMtuChanged")
             if (isLockedBy(device.address)) {
-                maxPacketDataSize = if (mtu > 512) { 512 } else { mtu }
+                WAKLogger.d(TAG, "change mtu")
+                maxPacketDataSize = if (mtu > 400) { 400 } else { mtu }
             }
         }
     }
@@ -169,8 +171,10 @@ class BleFidoService(
             return
         }
 
+        val firstByte=  value[0]
         val command = CTAPCommandType.fromByte(value[0])
         if (command == null) {
+            WAKLogger.d(TAG, "Unsupported command: ${ByteArrayUtil.toHex(byteArrayOf(firstByte))}")
             handleCTAPUnsupportedCommand()
             return
         }
@@ -396,8 +400,8 @@ class BleFidoService(
 
         WAKLogger.d(TAG, "closeByBLEError")
 
-        val b1 = (error.rawValue and 0x0000_ff00).shr(8).toByte()
-        val b2= (error.rawValue and 0x0000_00ff).toByte()
+        val b1 = (error.rawValue.toUInt() and 0x0000_ff00u).shr(8).toByte()
+        val b2= (error.rawValue.toUInt() and 0x0000_00ffu).toByte()
         val value = byteArrayOf(b1, b2)
 
         val (first, rest) =
@@ -449,9 +453,11 @@ class BleFidoService(
 
             @OnWrite("F1D0FFF1-DEAA-ECEE-B42F-C9BA7ED623BB")
             @ResponseNeeded(true)
-            @Secure(true)
+            @Secure(2)
             fun controlPoint(req: WriteRequest, res: WriteResponse) {
                 WAKLogger.d(TAG, "@Write: controlPoint")
+                WAKLogger.d(TAG, "@Write: ${ByteArrayUtil.toHex(req.value)}")
+
 
                 if (!isLockedBy(req.device.address)) {
                     WAKLogger.d(TAG, "@Write: unbound device")
@@ -470,7 +476,10 @@ class BleFidoService(
                     }
 
                     if (frameBuffer.isDone()) {
-                        handleCommand(frameBuffer.getCommand(), frameBuffer.getData())
+                        val command = frameBuffer.getCommand()
+                        val data           = frameBuffer.getData()
+                        WAKLogger.d(TAG, "got data: ${ByteArrayUtil.toHex(data)}")
+                        handleCommand(command, data)
                         frameBuffer.clear()
                     }
 
@@ -480,7 +489,7 @@ class BleFidoService(
 
             @OnRead("F1D0FFF2-DEAA-ECEE-B42F-C9BA7ED623BB")
             @Notifiable(true)
-            @Secure(true)
+            @Secure(2)
             fun status(req: ReadRequest, res: ReadResponse) {
                 WAKLogger.d(TAG, "@Read: status")
                 WAKLogger.d(TAG, "This characteristic is just for notification")
@@ -489,7 +498,7 @@ class BleFidoService(
             }
 
             @OnRead("F1D0FFF3-DEAA-ECEE-B42F-C9BA7ED623BB")
-            @Secure(true)
+            @Secure(2)
             fun controlPointLength(req: ReadRequest, res: ReadResponse) {
                 WAKLogger.d(TAG, "@Read: controlPointLength")
                 if (!isLockedBy(req.device.address)) {
@@ -497,14 +506,16 @@ class BleFidoService(
                     res.status = BluetoothGatt.GATT_FAILURE
                     return
                 }
-                val b1 = (maxPacketDataSize and 0x0000_ff00).shr(8).toByte()
-                val b2 = (maxPacketDataSize and 0x0000_00ff).toByte()
+                WAKLogger.d(TAG, "maxPackageDataSize: $maxPacketDataSize")
+                val size = maxPacketDataSize
+                val b1 = (size and 0x0000_ff00).shr(8).toByte()
+                val b2 = (size and 0x0000_00ff).toByte()
                 res.write(byteArrayOf(b1, b2))
             }
 
             @OnWrite("F1D0FFF4-DEAA-ECEE-B42F-C9BA7ED623BB")
             @ResponseNeeded(true)
-            @Secure(true)
+            @Secure(2)
             fun serviceRevisionBitFieldWrite(req: WriteRequest, res: WriteResponse) {
                 WAKLogger.d(TAG, "@Write: serviceRevisionBitField")
 
@@ -523,7 +534,7 @@ class BleFidoService(
             }
 
             @OnRead("F1D0FFF4-DEAA-ECEE-B42F-C9BA7ED623BB")
-            @Secure(true)
+            @Secure(2)
             fun serviceRevisionBitFieldRead(req: ReadRequest, res: ReadResponse) {
                 WAKLogger.d(TAG, "@Read: serviceRevisionBitField")
 
@@ -550,12 +561,27 @@ class BleFidoService(
                 res.write(byteArrayOf(0x20.toByte()))
             }
 
+            /*
+            @OnRead("00002A28-0000-1000-8000-00805F9B34FB")
+            @Secure(1)
+            fun serviceRevision(req: ReadRequest, res: ReadResponse) {
+                WAKLogger.d(TAG, "@Read: serviceRevision")
+
+                if (!isLockedBy(req.device.address)) {
+                    WAKLogger.d(TAG, "@Write: unbound device")
+                    res.status = BluetoothGatt.GATT_FAILURE
+                    return
+                }
+
+                res.write(byteArrayOf(0x312e30.toByte()))
+            }
+            */
+
         }
 
         val genericAccessService = object: PeripheralService(GENERIC_ACCESS_UUID, false) {
 
             @OnRead("00002A00-0000-1000-8000-00805F9B34FB")
-            @Secure(false)
             fun deviceName(req: ReadRequest, res: ReadResponse) {
                 WAKLogger.d(TAG, "@Read: deviceName")
                 val bytes = config.deviceName.toByteArray(charset = Charsets.UTF_8)
@@ -563,7 +589,6 @@ class BleFidoService(
             }
 
             @OnRead("00002A01-0000-1000-8000-00805F9B34FB")
-            @Secure(false)
             fun appearance(req: ReadRequest, res: ReadResponse) {
                 WAKLogger.d(TAG, "@Read: appearance")
 
@@ -578,7 +603,6 @@ class BleFidoService(
         val deviceInformationAccessService = object: PeripheralService(DEVICE_INFORMATION_UUID, false) {
 
             @OnRead("00002A29-0000-1000-8000-00805F9B34FB")
-            @Secure(false)
             fun manufactureName(req: ReadRequest, res: ReadResponse) {
                 WAKLogger.d(TAG, "@Read: manufactureName")
                 val bytes = config.manufacturerName.toByteArray(charset = Charsets.UTF_8)
@@ -586,7 +610,6 @@ class BleFidoService(
             }
 
             @OnRead("00002A24-0000-1000-8000-00805F9B34FB")
-            @Secure(false)
             fun modelNumber(req: ReadRequest, res: ReadResponse) {
                 WAKLogger.d(TAG, "@Read: modelNumber")
                 val bytes = config.modelNumber.toByteArray(charset = Charsets.UTF_8)
@@ -594,7 +617,6 @@ class BleFidoService(
             }
 
             @OnRead("00002A26-0000-1000-8000-00805F9B34FB")
-            @Secure(false)
             fun firmwareRevision(req: ReadRequest, res: ReadResponse) {
                 WAKLogger.d(TAG, "@Read: firmwareRevision")
                 val bytes = config.firmwareRevision.toByteArray(charset = Charsets.UTF_8)
@@ -606,8 +628,8 @@ class BleFidoService(
 
         return PeripheralBuilder(activity.applicationContext, peripheralListener)
             .service(fidoService)
-            .service(genericAccessService)
-            .service(deviceInformationAccessService)
+            //.service(genericAccessService)
+            //.service(deviceInformationAccessService)
             .build()
 
     }

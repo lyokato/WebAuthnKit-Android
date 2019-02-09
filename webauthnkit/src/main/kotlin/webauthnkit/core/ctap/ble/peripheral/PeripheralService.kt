@@ -100,12 +100,16 @@ open class PeripheralService(
             if (readAnnotation != null) {
                 WAKLogger.d(TAG, "found a method set @OnRead")
                 if (validReadHandler(it)) {
-                    val ch = getOrCreateCharacteristic(readAnnotation.uuid)
+                    val ch = getOrCreateCharacteristic(readAnnotation.uuid.toLowerCase())
                     ch.addHandler(BleEvent.READ, it)
                     ch.addProperty(BluetoothGattCharacteristic.PROPERTY_READ)
                     val secure: Secure? = it.getAnnotation(Secure::class.java)
-                    if (secure != null && secure.value) {
-                        ch.addPermission(BluetoothGattCharacteristic.PERMISSION_READ_ENCRYPTED)
+                    if (secure != null) {
+                        when {
+                            secure.value == 0 -> ch.addPermission(BluetoothGattCharacteristic.PERMISSION_READ)
+                            secure.value == 1 -> ch.addPermission(BluetoothGattCharacteristic.PERMISSION_READ_ENCRYPTED)
+                            secure.value == 2 -> ch.addPermission(BluetoothGattCharacteristic.PERMISSION_READ_ENCRYPTED_MITM)
+                        }
                     } else {
                         ch.addPermission(BluetoothGattCharacteristic.PERMISSION_READ)
                     }
@@ -127,12 +131,16 @@ open class PeripheralService(
 
                 if (validWriteHandler(it)) {
 
-                    val ch = getOrCreateCharacteristic(writeAnnotation.uuid)
+                    val ch = getOrCreateCharacteristic(writeAnnotation.uuid.toLowerCase())
                     ch.addHandler(BleEvent.WRITE, it)
 
                     val secure: Secure? = it.getAnnotation(Secure::class.java)
-                    if (secure != null && secure.value) {
-                        ch.addPermission(BluetoothGattCharacteristic.PERMISSION_WRITE_ENCRYPTED)
+                    if (secure != null) {
+                        when {
+                            secure.value == 0 -> ch.addPermission(BluetoothGattCharacteristic.PERMISSION_WRITE)
+                            secure.value == 1 -> ch.addPermission(BluetoothGattCharacteristic.PERMISSION_WRITE_ENCRYPTED)
+                            secure.value == 2 -> ch.addPermission(BluetoothGattCharacteristic.PERMISSION_WRITE_ENCRYPTED_MITM)
+                        }
                     } else {
                         ch.addPermission(BluetoothGattCharacteristic.PERMISSION_WRITE)
                     }

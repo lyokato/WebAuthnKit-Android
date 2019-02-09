@@ -54,12 +54,12 @@ class BleAuthenticatorRegistrationActivity : AppCompatActivity() {
                 }
             }
 
-            createBleFidoService()
         }
     }
 
     private fun onStartClicked() {
         WAKLogger.d(TAG, "onStartClicked")
+        createBleFidoService()
         if (bleFidoService!!.start()) {
             WAKLogger.d(TAG, "started successfully")
         } else {
@@ -70,6 +70,7 @@ class BleAuthenticatorRegistrationActivity : AppCompatActivity() {
     private fun onStopClicked() {
         WAKLogger.d(TAG, "onStopClicked")
         bleFidoService?.stop()
+        bleFidoService = null
     }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {

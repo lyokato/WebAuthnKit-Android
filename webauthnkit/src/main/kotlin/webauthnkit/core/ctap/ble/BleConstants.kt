@@ -1,41 +1,41 @@
 package webauthnkit.core.ctap.ble
 
-enum class BLEErrorType(val rawValue: Int) {
-    InvalidCmd(0x01),
-    InvalidPar(0x02),
-    InvalidLen(0x03),
-    InvalidSeq(0x04),
-    ReqTimeout(0x05),
-    Other(0x7f);
+enum class BLEErrorType(val rawValue: Byte) {
+    InvalidCmd(0x01.toByte()),
+    InvalidPar(0x02.toByte()),
+    InvalidLen(0x03.toByte()),
+    InvalidSeq(0x04.toByte()),
+    ReqTimeout(0x05.toByte()),
+    Other(0x7f.toByte());
 
     fun toByte(): Byte {
-        return rawValue.toByte()
+        return rawValue
     }
 }
 
-enum class BLECommandType(val rawValue: Int) {
+enum class BLECommandType(val rawValue: Byte) {
 
-    Ping(0x81),
-    KeepAlive(0x82),
-    MSG(0x83),
-    Cancel(0xBE),
-    Error(0xBF);
+    Ping(0x81.toByte()),
+    KeepAlive(0x82.toByte()),
+    MSG(0x83.toByte()),
+    Cancel(0xBE.toByte()),
+    Error(0xBF.toByte());
 
     companion object {
         fun fromByte(byte: Byte): BLECommandType? {
-            return when (byte.toInt()) {
-                0x81 -> Ping
-                0x82 -> KeepAlive
-                0x83 -> MSG
-                0xBE -> Cancel
-                0xBF -> Error
+            return when (byte) {
+                0x81.toByte() -> Ping
+                0x82.toByte() -> KeepAlive
+                0x83.toByte() -> MSG
+                0xBE.toByte() -> Cancel
+                0xBF.toByte() -> Error
                 else -> null
             }
         }
     }
 
     fun toByte(): Byte {
-        return rawValue.toByte()
+        return rawValue
     }
 
 }

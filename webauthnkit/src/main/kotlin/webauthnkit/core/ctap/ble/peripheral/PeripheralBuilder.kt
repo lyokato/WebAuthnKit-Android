@@ -11,7 +11,7 @@ class PeripheralBuilder(
 
     fun service(service: PeripheralService): PeripheralBuilder {
         service.analyzeCharacteristicsDefinition()
-        services[service.uuidString] = service
+        services[service.uuidString.toLowerCase()] = service
         return this
     }
 

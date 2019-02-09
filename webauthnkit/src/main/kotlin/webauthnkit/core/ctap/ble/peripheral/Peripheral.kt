@@ -36,7 +36,6 @@ class Peripheral(
 
     private var rawServer: BluetoothGattServer? = null
     private var advertiser: BluetoothLeAdvertiser? = null
-    private var advertiseCallback: AdvertiseCallback? = null
 
     var advertiseMode = AdvertiseSettings.ADVERTISE_MODE_BALANCED
     var advertiseTxPower = AdvertiseSettings.ADVERTISE_TX_POWER_HIGH
@@ -85,7 +84,7 @@ class Peripheral(
             return false
         }
 
-        rawServer = manager!!.openGattServer(context, createServerCallback())
+        rawServer = manager!!.openGattServer(context, gattServerCallback!!)
         if (rawServer == null) {
             WAKLogger.w(TAG, "can't open Gatt Server")
             return false
@@ -101,7 +100,6 @@ class Peripheral(
             return false
         }
 
-        advertiseCallback = createAdvertiseCallback()
         advertiser!!.startAdvertising(
             createAdvertiseSettings(),
             createAdvertiseData(),
@@ -178,8 +176,8 @@ class Peripheral(
         return builder.build()
     }
 
-    private fun createAdvertiseCallback(): AdvertiseCallback {
-        return object: AdvertiseCallback() {
+    private val advertiseCallback =
+        object: AdvertiseCallback() {
 
             override fun onStartFailure(errorCode: Int) {
                 var description = ""
@@ -205,11 +203,8 @@ class Peripheral(
 
         }
 
-    }
-
-    private fun createServerCallback(): BluetoothGattServerCallback {
-
-        return object: BluetoothGattServerCallback() {
+    private val gattServerCallback =
+        object: BluetoothGattServerCallback() {
 
             override fun onCharacteristicReadRequest(
                 device:         BluetoothDevice,
@@ -224,9 +219,15 @@ class Peripheral(
 
                 val serviceUUID = characteristic.service.uuid.toString()
                 val service = services[serviceUUID]
-                service?.let {
-                    if (it.canHandle(BleEvent.READ, req.uuid)) {
-                        it.dispatchReadRequest(req, res)
+                if (service == null) {
+                    WAKLogger.d(TAG, "service not found")
+                } else {
+                    service.let {
+                        if (it.canHandle(BleEvent.READ, req.uuid)) {
+                            it.dispatchReadRequest(req, res)
+                        } else {
+                            WAKLogger.d(TAG, "can't handle this characteristic")
+                        }
                     }
                 }
 
@@ -250,9 +251,16 @@ class Peripheral(
 
                 val serviceUUID = characteristic.service.uuid.toString()
                 val service = services[serviceUUID]
-                service?.let {
-                    if (it.canHandle(BleEvent.WRITE, req.uuid)) {
-                        it.dispatchWriteRequest(req, res)
+
+                if (service == null) {
+                    WAKLogger.d(TAG, "service not found")
+                } else {
+                    service.let {
+                        if (it.canHandle(BleEvent.WRITE, req.uuid)) {
+                            it.dispatchWriteRequest(req, res)
+                        } else {
+                            WAKLogger.d(TAG, "can't handle this characteristic")
+                        }
                     }
                 }
                 res.finishOn(rawServer!!)
@@ -336,7 +344,5 @@ class Peripheral(
                     WAKLogger.d(TAG, "BLE service not added")
                 }
             }
-
-        }
     }
 }

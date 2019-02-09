@@ -1,19 +1,22 @@
 package webauthnkit.example
 
-import android.Manifest
 import android.content.Intent
-import android.content.pm.PackageManager
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
-import androidx.appcompat.app.AlertDialog
-import com.google.android.material.snackbar.Snackbar
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import org.jetbrains.anko.*
 import org.jetbrains.anko.sdk27.coroutines.onClick
-import permissions.dispatcher.*
 import webauthnkit.core.util.WAKLogger
 
-@RuntimePermissions
+/* currently, comment out BLE related code
+import android.Manifest
+import permissions.dispatcher.*
+import androidx.appcompat.app.AlertDialog
+import com.google.android.material.snackbar.Snackbar
+import android.content.pm.PackageManager
+*/
+
+// @RuntimePermissions
 @ExperimentalCoroutinesApi
 @ExperimentalUnsignedTypes
 class MainActivity : AppCompatActivity() {
@@ -50,6 +53,7 @@ class MainActivity : AppCompatActivity() {
                 }
             }
 
+            /*
             button("Registration (BLE)") {
                 textSize = 24f
 
@@ -66,19 +70,8 @@ class MainActivity : AppCompatActivity() {
                     goToBleAuthenticationActivity()
                 }
             }
+            */
 
-        }
-    }
-
-    private fun checkPermission(): Boolean {
-
-        if (checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION)  != PackageManager.PERMISSION_GRANTED) {
-            WAKLogger.d(TAG, "not granted!")
-            requestPermissions(arrayOf(Manifest.permission.ACCESS_FINE_LOCATION), REQUEST_PERMISSIONS)
-            return false
-        } else {
-            WAKLogger.d(TAG, "granted!")
-            return true
         }
     }
 
@@ -90,6 +83,20 @@ class MainActivity : AppCompatActivity() {
     private fun goToAuthenticationActivity() {
         val intent = Intent(this, AuthenticationActivity::class.java)
         startActivity(intent)
+    }
+
+
+    /*
+    private fun checkPermission(): Boolean {
+
+        if (checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION)  != PackageManager.PERMISSION_GRANTED) {
+            WAKLogger.d(TAG, "not granted!")
+            requestPermissions(arrayOf(Manifest.permission.ACCESS_FINE_LOCATION), REQUEST_PERMISSIONS)
+            return false
+        } else {
+            WAKLogger.d(TAG, "granted!")
+            return true
+        }
     }
 
     @NeedsPermission(Manifest.permission.ACCESS_FINE_LOCATION)
@@ -135,4 +142,5 @@ class MainActivity : AppCompatActivity() {
             .setMessage(message)
             .show()
     }
+    */
 }

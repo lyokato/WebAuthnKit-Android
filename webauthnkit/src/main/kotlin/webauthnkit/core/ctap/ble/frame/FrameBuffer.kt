@@ -29,12 +29,15 @@ class FrameBuffer {
 
     fun putFragment(value: ByteArray): BLEErrorType? {
 
+        WAKLogger.d(TAG, "putFragment: ${value.size} bytes")
         if (done) {
             WAKLogger.d(TAG, "always got enough data. process and discard buffer.")
             return BLEErrorType.InvalidLen
         }
 
         if (waitingContinuation) {
+
+            WAKLogger.d(TAG, "waiting continuation, put as rest")
 
             val (contFrame, err) =
                 ContinuationFrame.fromByteArray(value)
@@ -48,6 +51,7 @@ class FrameBuffer {
                 data = ByteArrayUtil.merge(data, contFrame.data)
 
                 if (len <= data.size) {
+                    WAKLogger.d(TAG, "done")
                     done = true
                 } else {
                     seq = contFrame.seq
@@ -60,6 +64,8 @@ class FrameBuffer {
 
         } else {
 
+            WAKLogger.d(TAG, "init frame")
+
             val (initFrame, err) = Frame.fromByteArray(value)
             if (initFrame == null) {
                 WAKLogger.d(TAG, "failed to obtain init frame, discard this buffer")
@@ -71,6 +77,7 @@ class FrameBuffer {
             data    = initFrame.data
 
             if (len <= data.size) {
+                WAKLogger.d(TAG, "done")
                 done = true
             } else {
                 waitingContinuation = true
