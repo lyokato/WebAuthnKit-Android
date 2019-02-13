@@ -29,7 +29,18 @@ class RegistrationResultActivity : AppCompatActivity() {
         WAKLogger.d(TAG, "CRED_ID:" + credId)
         WAKLogger.d(TAG, "CRED_RAW:" + credRaw)
         WAKLogger.d(TAG, "CLIENT_JSON:" + jsonBase64)
-        WAKLogger.d(TAG, "ATTESTATION:" + attestation)
+
+        var printed = 0
+        val numForEachLine = 1000
+        while (printed < attestation.length) {
+            if (printed + numForEachLine < attestation.length) {
+                WAKLogger.d(TAG, "ATTESTATION:" + attestation.substring(printed, printed + numForEachLine))
+                printed += numForEachLine
+            } else {
+                WAKLogger.d(TAG, "ATTESTATION:" + attestation.substring(printed, attestation.length))
+                break
+            }
+        }
 
         verticalLayout {
 
