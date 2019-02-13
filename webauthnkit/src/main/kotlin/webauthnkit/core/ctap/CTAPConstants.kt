@@ -1,23 +1,23 @@
 package webauthnkit.core.ctap
 
-enum class CTAPCommandType(val rawValue: Int) {
+enum class CTAPCommandType(val rawValue: Byte) {
 
-   MakeCredential(0x01),
-   GetAssertion(0x02),
-   GetInfo(0x04),
-   ClientPIN(0x06),
-   Reset(0x07),
-   GetNextAssertion(0x08);
+   MakeCredential(0x01.toByte()),
+   GetAssertion(0x02.toByte()),
+   GetInfo(0x04.toByte()),
+   ClientPIN(0x06.toByte()),
+   Reset(0x07.toByte()),
+   GetNextAssertion(0x08.toByte());
 
    companion object {
        fun fromByte(byte: Byte): CTAPCommandType? {
-          return when (byte.toInt()) {
-             0x01 -> MakeCredential
-             0x02 -> GetAssertion
-             0x04 -> GetInfo
-             0x06 -> ClientPIN
-             0x07 -> Reset
-             0x08 -> GetNextAssertion
+          return when (byte) {
+             0x01.toByte() -> MakeCredential
+             0x02.toByte() -> GetAssertion
+             0x04.toByte() -> GetInfo
+             0x06.toByte() -> ClientPIN
+             0x07.toByte() -> Reset
+             0x08.toByte() -> GetNextAssertion
              else -> null
           }
        }

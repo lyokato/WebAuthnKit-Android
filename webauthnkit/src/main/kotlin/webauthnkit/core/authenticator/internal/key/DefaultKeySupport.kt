@@ -13,6 +13,7 @@ import java.security.spec.ECGenParameterSpec
 import java.util.*
 import android.security.keystore.KeyInfo
 import webauthnkit.core.error.InvalidStateException
+import java.security.cert.X509Certificate
 
 @TargetApi(Build.VERSION_CODES.M)
 @ExperimentalUnsignedTypes
@@ -140,7 +141,6 @@ class DefaultKeySupport(
         attStmt["alg"] = alg.toLong()
         attStmt["sig"] = sig
 
-        /*
         if (useSecureHardware(alias)) {
 
             WAKLogger.d(
@@ -167,7 +167,6 @@ class DefaultKeySupport(
             )
 
         } else {
-        */
 
             WAKLogger.d(
                 TAG,
@@ -179,7 +178,7 @@ class DefaultKeySupport(
                 authData = authenticatorData,
                 attStmt  = attStmt
             )
-        //}
+        }
 
     }
 }

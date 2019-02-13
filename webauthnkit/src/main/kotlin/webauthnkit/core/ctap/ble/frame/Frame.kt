@@ -24,7 +24,8 @@ class Frame(
                 return Pair(null, BLEErrorType.InvalidLen)
             }
 
-            val command = BLECommandType.fromByte(bytes[0])
+            val firstByte = bytes[0]
+            val command = BLECommandType.fromByte(firstByte)
             if (command == null) {
                 WAKLogger.w(TAG, "invalid BLE frame: unknown command type")
                 return Pair(null, BLEErrorType.InvalidCmd)

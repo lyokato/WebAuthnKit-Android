@@ -12,7 +12,10 @@ import webauthnkit.core.util.WAKLogger
 import java.lang.reflect.Method
 import java.util.*
 
-open class PeripheralService(val uuidString: String) {
+open class PeripheralService(
+    val uuidString: String,
+    val primary:    Boolean
+) {
 
     val uuid = UUID.fromString(uuidString)
 
@@ -67,15 +70,21 @@ open class PeripheralService(val uuidString: String) {
         }
     }
 
+    private fun serviceType(): Int {
+        return if (primary) {
+            BluetoothGattService.SERVICE_TYPE_PRIMARY
+        } else {
+            BluetoothGattService.SERVICE_TYPE_SECONDARY
+        }
+    }
+
     internal fun createRaw(): BluetoothGattService {
-        val service = BluetoothGattService(uuid,
-            BluetoothGattService.SERVICE_TYPE_PRIMARY)
+        val service = BluetoothGattService(uuid, serviceType())
         characteristics.values.forEach {
             service.addCharacteristic(it.createRaw())
         }
         return service
     }
-
 
     internal fun analyzeCharacteristicsDefinition() {
 
@@ -91,12 +100,16 @@ open class PeripheralService(val uuidString: String) {
             if (readAnnotation != null) {
                 WAKLogger.d(TAG, "found a method set @OnRead")
                 if (validReadHandler(it)) {
-                    val ch = getOrCreateCharacteristic(readAnnotation.uuid)
+                    val ch = getOrCreateCharacteristic(readAnnotation.uuid.toLowerCase())
                     ch.addHandler(BleEvent.READ, it)
                     ch.addProperty(BluetoothGattCharacteristic.PROPERTY_READ)
                     val secure: Secure? = it.getAnnotation(Secure::class.java)
-                    if (secure != null && secure.value) {
-                        ch.addPermission(BluetoothGattCharacteristic.PERMISSION_READ_ENCRYPTED)
+                    if (secure != null) {
+                        when {
+                            secure.value == 0 -> ch.addPermission(BluetoothGattCharacteristic.PERMISSION_READ)
+                            secure.value == 1 -> ch.addPermission(BluetoothGattCharacteristic.PERMISSION_READ_ENCRYPTED)
+                            secure.value == 2 -> ch.addPermission(BluetoothGattCharacteristic.PERMISSION_READ_ENCRYPTED_MITM)
+                        }
                     } else {
                         ch.addPermission(BluetoothGattCharacteristic.PERMISSION_READ)
                     }
@@ -118,12 +131,16 @@ open class PeripheralService(val uuidString: String) {
 
                 if (validWriteHandler(it)) {
 
-                    val ch = getOrCreateCharacteristic(writeAnnotation.uuid)
+                    val ch = getOrCreateCharacteristic(writeAnnotation.uuid.toLowerCase())
                     ch.addHandler(BleEvent.WRITE, it)
 
                     val secure: Secure? = it.getAnnotation(Secure::class.java)
-                    if (secure != null && secure.value) {
-                        ch.addPermission(BluetoothGattCharacteristic.PERMISSION_WRITE_ENCRYPTED)
+                    if (secure != null) {
+                        when {
+                            secure.value == 0 -> ch.addPermission(BluetoothGattCharacteristic.PERMISSION_WRITE)
+                            secure.value == 1 -> ch.addPermission(BluetoothGattCharacteristic.PERMISSION_WRITE_ENCRYPTED)
+                            secure.value == 2 -> ch.addPermission(BluetoothGattCharacteristic.PERMISSION_WRITE_ENCRYPTED_MITM)
+                        }
                     } else {
                         ch.addPermission(BluetoothGattCharacteristic.PERMISSION_WRITE)
                     }

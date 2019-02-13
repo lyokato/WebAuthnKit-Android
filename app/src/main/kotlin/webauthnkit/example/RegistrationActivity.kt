@@ -112,7 +112,7 @@ class RegistrationActivity : AppCompatActivity() {
             challengeField = editText {
                 singleLine = true
             }
-            challengeField!!.setText("aed9c789543b")
+            challengeField!!.setText("E54F333A94D24AA4A1AAC181B389FBCCEC2874BDED40E17E527ACD79CBE42E2C")
 
             val spinnerWidth = 160
 
@@ -331,6 +331,7 @@ class RegistrationActivity : AppCompatActivity() {
 
             val cred = webAuthnClient.create(options)
             WAKLogger.d(TAG, "CHALLENGE:" + ByteArrayUtil.encodeBase64URL(options.challenge))
+
             showResultActivity(cred)
 
         } catch (e: Exception) {
@@ -352,6 +353,7 @@ class RegistrationActivity : AppCompatActivity() {
             val intent = Intent(this, RegistrationResultActivity::class.java)
             intent.putExtra("CRED_ID", cred.id)
             intent.putExtra("CRED_RAW", ByteArrayUtil.toHex(cred.rawId))
+
             intent.putExtra("ATTESTATION", ByteArrayUtil.encodeBase64URL(cred.response.attestationObject))
             intent.putExtra("CLIENT_JSON", cred.response.clientDataJSON)
             startActivity(intent)
